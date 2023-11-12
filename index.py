@@ -6,6 +6,9 @@ from dash.exceptions import PreventUpdate
 import webbrowser
 from app import app
 
+from apps import commonmodules as cm
+from apps import home
+
 # Layout definition
 CONTENT_STYLE = {
     "margin-top" : "4em",
@@ -17,6 +20,7 @@ CONTENT_STYLE = {
 app.layout = html.Div(
     [
         dcc.Location(id = 'url', refresh = True),
+        cm.navbar,
         html.Div(id = 'page-content', style = CONTENT_STYLE)
     ]
 )
@@ -32,7 +36,7 @@ def displaypage(pathname):
         eventid = ctx.triggered[0]['prop_id'].split('.')[0]
         if eventid == 'url':
             if pathname == '/' or pathname == '/home':
-                returnlayout = "home"
+                returnlayout = home.layout
             else:
                 returnlayout = 'error404'
             return [returnlayout]

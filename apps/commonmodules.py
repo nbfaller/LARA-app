@@ -11,18 +11,22 @@ navlink_style = {
 
 navbar = dbc.Navbar(
     [
-        html.A(
-            dbc.Row(
-                [
-                    dbc.Col(dbc.NavbarBrand("LÁRA", className = "ms-2"))
-                ],
-                align = "center",
-                className = 'g-0'
-            ),
-            href = "/home"
+        dbc.Col(
+            [
+                html.A(
+                    dbc.Row(
+                        [
+                            dbc.Col(dbc.NavbarBrand("LÁRA", className = "ms-2"))
+                        ],
+                        align = "center",
+                        className = 'g-0'
+                    ),
+                    href = "/home"
+                )
+            ]
         ),
-        dbc.NavLink("SEARCH", href = "/search", style = navlink_style),
-        dbc.NavLink("CART", href = "/cart", style = navlink_style),
+        dbc.NavLink("🔎 SEARCH", href = "/search", style = navlink_style),
+        dbc.NavLink("🛒 CART", href = "/cart", style = navlink_style),
         dbc.NavLink("LOG-IN", href = "/login", style = navlink_style)
     ],
     dark = True,

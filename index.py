@@ -11,10 +11,10 @@ from apps import home
 
 # Layout definition
 CONTENT_STYLE = {
-    "margin-top" : "4em",
-    "margin-left" : "1em",
-    "margin-right" : "1em",
-    "padding" : "1em 1em"
+    #"margin-top" : "4em",
+    #"margin-left" : "1em",
+    #"margin-right" : "1em",
+    #"padding" : "1em 1em"
 }
 
 app.layout = html.Div(

@@ -42,47 +42,51 @@ def home_loadclassifications(pathname):
 
 layout = html.Div(
     [
-        html.Img(
-            src=app.get_asset_url('banner.jpg'),
-            style = {
-                'width' : '100%'
-            }
-        ),
-        html.Br(),
-        dbc.Row(
+        html.Div(
             [
-                dbc.Col(
-                    dbc.Form(
-                        [
-                            dbc.Row(
+                html.Img(
+                    src=app.get_asset_url('banner.jpg'),
+                    style = {
+                        'width' : '100%',
+                        'margin-bottom' : '1em'
+                    }
+                )
+            ],
+            id = 'banner'
+        ),
+        html.Div(
+            [
+                dbc.Row(
+                    [
+                        html.Div(
+                            dbc.Form(
                                 [
-                                    dbc.Col(
-                                        dbc.Input(
-                                            type = 'text',
-                                            id = 'search_input',
-                                            placeholder = 'Search here'
-                                        ),
-                                        width = 7
-                                    ),
-                                    dbc.Col(
-                                        dcc.Dropdown(
-                                            id = 'search_type',
-                                            placeholder = 'Search by'
-                                        ),
-                                        width = 3
+                                    dbc.Row(
+                                        [
+                                            html.Div(
+                                                dbc.Input(
+                                                    type = 'text',
+                                                    id = 'search_input',
+                                                    placeholder = "Search here"
+                                                ), style = {'width' : '70%'}
+                                            ),
+                                            html.Div(
+                                                dcc.Dropdown(
+                                                    id = 'search_type',
+                                                    placeholder = "Search by"
+                                                ), style = {'width' : '30%'}
+                                            ),
+                                        ]
                                     )
                                 ]
-                            )
-                        ]
-                    )
-                ),
-                dbc.Col(
-                    dbc.Button(
-                        '🔎 Search',
-                        id = 'search_submit',
-                        n_clicks = 0
-                    ),
-                    width = 3
+                            ), style = {'width' : '60%'}
+                        ),
+                        dbc.Button(
+                            '🔎 Search',
+                            id = 'search_submit',
+                            n_clicks = 0
+                        )
+                    ], justify = "center"
                 )
             ]
         ),

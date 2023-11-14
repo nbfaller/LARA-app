@@ -50,8 +50,12 @@ body {
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.5;
-  color: #212529;
-  background-color: #fff;
+  color: #242424;
+  background-color: #f5f5f5;
+  background-image: url(/assets/backgrounds/LARA-pattern-diagonal-offwhite.png);
+  background-size: 5% 5%;
+  background-position: 0 0;
+  background-repeat: repeat;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
 }

@@ -37,6 +37,10 @@ def displaypage(pathname):
         if eventid == 'url':
             if pathname == '/' or pathname == '/home':
                 returnlayout = home.layout
+            elif pathname == '/search':
+                returnlayout = "search"
+            elif pathname == '/login':
+                returnlayout = "login"
             else:
                 returnlayout = 'error404'
             return [returnlayout]

@@ -1,7 +1,6 @@
-import dash_core_components as dcc
-import dash_html_components as html
+from dash import dcc, html
 import dash_bootstrap_components as dbc
-import dash_table
+from dash import dash_table
 import dash
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
@@ -24,7 +23,12 @@ def home_loadclassifications(pathname):
         values1 = []
         cols1 = ['subj_tier1_ID', 'subj_tier1_name']
         df1 = db.querydatafromdatabase(sql1, values1, cols1)
-        table1 = dbc.Table.from_dataframe(df1, striped = False, bordered = False, hover = True, size = 'sm')
+        table1 = dbc.Table.from_dataframe(
+            df1, striped = False, bordered = False, hover = True, size = 'sm',
+            style = {
+                #'border' : '0px'
+            }
+        )
 
         sql2 = """SELECT resourcetype_name FROM resourceblock.ResourceType"""
         values2 = []
@@ -41,7 +45,7 @@ layout = html.Div(
         html.Img(
             src=app.get_asset_url('banner.jpg'),
             style = {
-                'width' : '100%',
+                'width' : '100%'
             }
         ),
         html.Br(),

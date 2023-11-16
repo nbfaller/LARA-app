@@ -47,48 +47,15 @@ layout = html.Div(
                 html.Img(
                     src=app.get_asset_url('banner.jpg'),
                     style = {
-                        'width' : '100%',
-                        'margin-bottom' : '1em'
+                        'width' : '100vw',
+                        'position' : 'relative',
+                        'margin-left' : '-2em',
+                        'margin-top' : '-5em',
                     }
-                )
+                ),
+                #html.H1(['Your books, now at the', html.Br(), 'reach of your fingertips'])
             ],
             id = 'banner'
-        ),
-        html.Div(
-            [
-                dbc.Row(
-                    [
-                        html.Div(
-                            dbc.Form(
-                                [
-                                    dbc.Row(
-                                        [
-                                            html.Div(
-                                                dbc.Input(
-                                                    type = 'text',
-                                                    id = 'search_input',
-                                                    placeholder = "Search here"
-                                                ), style = {'width' : '70%'}
-                                            ),
-                                            html.Div(
-                                                dcc.Dropdown(
-                                                    id = 'search_type',
-                                                    placeholder = "Search by"
-                                                ), style = {'width' : '30%'}
-                                            ),
-                                        ]
-                                    )
-                                ]
-                            ), style = {'width' : '60%'}
-                        ),
-                        dbc.Button(
-                            '🔎 Search',
-                            id = 'search_submit',
-                            n_clicks = 0
-                        )
-                    ], justify = "center"
-                )
-            ]
         ),
         dbc.Row(
             [

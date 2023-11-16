@@ -58,7 +58,7 @@ body {
   color: #242424;
   background-color: #f5f5f5;
   background-image: url(/assets/backgrounds/LARA-pattern-diagonal-offwhite.png);
-  background-size: 5% 5%;
+  background-size: 3em 3em;
   background-position: 0 0;
   background-repeat: repeat;
   -webkit-text-size-adjust: 100%;
@@ -3944,8 +3944,8 @@ textarea.form-control-lg {
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
 }
 .navbar > .container,
 .navbar > .container-fluid,

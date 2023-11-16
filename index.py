@@ -11,17 +11,18 @@ from apps import home
 
 # Layout definition
 CONTENT_STYLE = {
-    #"margin-top" : "4em",
-    #"margin-left" : "1em",
-    #"margin-right" : "1em",
-    #"padding" : "1em 1em"
+    "margin-top" : "4em",
+    "margin-left" : "1em",
+    "margin-right" : "1em",
+    "padding" : "1em 1em"
 }
 
 app.layout = html.Div(
     [
         dcc.Location(id = 'url', refresh = True),
         cm.navbar,
-        html.Div(id = 'page-content', style = CONTENT_STYLE)
+        html.Div(id = 'page-content', style = CONTENT_STYLE),
+        cm.footer
     ]
 )
 

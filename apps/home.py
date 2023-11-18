@@ -5,6 +5,7 @@ import dash
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import pandas as pd
+#import dash_ag_grid as dag
 
 from app import app
 from apps import dbconnect as db
@@ -44,13 +45,25 @@ layout = html.Div(
     [
         html.Div(
             [
+                html.H1(
+                    ["Your books, now at the", html.Br(),"reach of your fingertips"],
+                    style = {
+                        'position' : 'absolute',
+                        'margin-top' : '6em',
+                        'margin-left' : '1em',
+                        'z-index' : '2',
+                        'color' : '#f5f5f5'
+                    }
+                ),
                 html.Img(
                     src=app.get_asset_url('banner.jpg'),
                     style = {
-                        'width' : '100vw',
+                        'width' : '100vw', # causes picture to stretch instead of crop (maybe set height as fixed instead)
                         'position' : 'relative',
                         'margin-left' : '-2em',
                         'margin-top' : '-5em',
+                        'filter' : 'drop-shadow(0px 25px 35px #d3d0c9)',
+                        'z-index' : '1'
                     }
                 ),
                 #html.H1(['Your books, now at the', html.Br(), 'reach of your fingertips'])
@@ -60,22 +73,69 @@ layout = html.Div(
         dbc.Row(
             [
                 dbc.Col(
+                    dbc.Form(
+                        [
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        dbc.Input(
+                                            type = 'text',
+                                            id = 'search_input',
+                                            placeholder = "Search here"
+                                        ), width = 9
+                                    ),
+                                    dbc.Col(
+                                        dcc.Dropdown(
+                                            id = 'search_type',
+                                            placeholder = "Search by"
+                                        )
+                                    )
+                                ]
+                            )
+                        ]
+                    )
+                ),
+                dbc.Col(
+                    dbc.Button(
+                        '🔎 Search',
+                        id = 'search_submit',
+                        n_clicks = 0,
+                        style = {'width' : '100%'}
+                    ),
+                    width = 2
+                ),
+                #dbc.Col(
+                #    "Advanced search",
+                #    width = 2
+                #)
+            ],
+            style = {
+                'position' : 'relative',
+                'z-index' : '2',
+                'margin-top' : '3em',
+                'margin-left' : '10em',
+                'margin-right' : '10em'
+            },
+        ),
+        dbc.Row(
+            [
+                dbc.Col(
                     [
                         html.H3('Browse by classification'),
                         html.Div(id = 'resource_classifications')
-                    ]
+                    ], width = "auto"
                 ),
                 dbc.Col(
                     [
                         html.H3('Browse by resource type'),
                         html.Div(id = 'resource_types')
-                    ]
+                    ], width = "auto"
                 )
-            ],
+            ], align = "center", justify = "center",
             style = {
-                'margin-top' : '2em',
-                'margin-left' : '5em',
-                'margin-right' : '5em'
+                'margin-top' : '3em',
+                #'margin-left' : '10em',
+                #'margin-right' : '10em'
             }
         )
     ]

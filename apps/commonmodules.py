@@ -41,41 +41,58 @@ navbar = dbc.Navbar(
     ],
     dark = True,
     color = 'dark',
-    #style = {
-    #    'background-image' : 'url(/assets/backgrounds/LARA-pattern-diagonal-green.png)',
-    #    'background-size' : '3em 3em',
-    #    'background-position' : '0 0',
-    #    'background-repeat': 'repeat'
-    #}
+    style = {
+        'background-image' : 'url(/assets/backgrounds/LARA-pattern-navbar.png)',
+        'background-size' : '3em 3em',
+        'background-position' : 'center',
+        'background-repeat': 'repeat',
+        'filter' : 'drop-shadow(0px 25px 35px #286052)',
+        'z-index' : '5'
+    },
 )
 
 footer = html.Footer(
     [
         dbc.Row(
             [
+                #html.Hr(),
                 dbc.Col(
                     [
                         html.Img(
                             src=app.get_asset_url('nwssu-seal.png'),
                             style = {
-                                'width' : '4em'
+                                'width' : '8em'
                             }
                         )
-                    ], width = 1
+                    ],
+                    width = "auto",
+                    style = {
+                        #'background-color' : '#000'
+                    },
                 ),
                 dbc.Col(
                     [
                         html.H4(["Library Access & Resources Administration System"]),
-                        "Copyright © 2024. University Library, Northwest Samar State University",
-                    ]
+                        "Copyright © 2024. University Library, Northwest Samar State University", html.Br(),
+                        html.A("About LÁRA", href = "about-us"), " • ", html.A("Main Website", href = "https://nwssu.edu.ph"), " • ", html.A("Frequently Asked Questions", href = "faq"),
+                    ],
+                    width = "auto",
+                    style = {
+                        #'background-color' : '#000'
+                    },
                 ),
-            ]
+            ],
+            style = {
+                'margin-top' : '2em',
+                #'margin-left' : '10em',
+                #'margin-right' : '10em',
+                'padding' : '0em 0em 2em 2em'
+                #'background-color' : '#000'
+            },
+            align = "center", justify = "center"
         )
     ],
     style = {
-        'margin-top' : '2em',
-        'margin-left' : '6em',
-        'margin-right' : '6em',
-        'padding' : '0em 0em 2em 2em'
+        #'background-image' : 'linear-gradient(rgba(235,232,226,0), rgba(235,232,226,1))'
     }
 )

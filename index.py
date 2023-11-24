@@ -42,6 +42,10 @@ def displaypage(pathname):
                 returnlayout = "search"
             elif pathname == '/login':
                 returnlayout = "login"
+            elif pathname == '/about-us':
+                returnlayout = "about us"
+            elif pathname == '/faq':
+                returnlayout = "faq"
             else:
                 returnlayout = 'error404'
             return [returnlayout]

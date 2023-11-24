@@ -6,7 +6,8 @@ from dash.exceptions import PreventUpdate
 from app import app
 
 navlink_style = {
-    'color' : '#f5f5f5'
+    'color' : '#f5f5f5',
+    'letter-spacing': '3px'
 }
 
 navbar = dbc.Navbar(
@@ -61,7 +62,7 @@ footer = html.Footer(
                         html.Img(
                             src=app.get_asset_url('nwssu-seal.png'),
                             style = {
-                                'width' : '8em'
+                                'width' : '6em'
                             }
                         )
                     ],
@@ -72,7 +73,7 @@ footer = html.Footer(
                 ),
                 dbc.Col(
                     [
-                        html.H4(["Library Access & Resources Administration System"]),
+                        html.H4(["LÁRA: Library Access & Resources Administration System"]),
                         "Copyright © 2024. University Library, Northwest Samar State University", html.Br(),
                         html.A("About LÁRA", href = "about-us"), " • ", html.A("Main Website", href = "https://nwssu.edu.ph"), " • ", html.A("Frequently Asked Questions", href = "faq"),
                     ],
@@ -86,7 +87,7 @@ footer = html.Footer(
                 'margin-top' : '2em',
                 #'margin-left' : '10em',
                 #'margin-right' : '10em',
-                'padding' : '0em 0em 2em 2em'
+                'padding' : '0em 0em 2em 0em'
                 #'background-color' : '#000'
             },
             align = "center", justify = "center"

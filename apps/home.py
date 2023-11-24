@@ -24,17 +24,17 @@ def home_loadclassifications(pathname):
         values1 = []
         cols1 = ['subj_tier1_ID', 'subj_tier1_name']
         df1 = db.querydatafromdatabase(sql1, values1, cols1)
+        df1['subj_tier1_ID'] = df1['subj_tier1_ID'].apply(lambda x: '{0:0>3}'.format(x))
+        df1.rename(columns = {'subj_tier1_ID':'', 'subj_tier1_name':''}, inplace = True)
         table1 = dbc.Table.from_dataframe(
             df1, striped = False, bordered = False, hover = True, size = 'sm',
-            style = {
-                #'border' : '0px'
-            }
         )
 
         sql2 = """SELECT resourcetype_name FROM resourceblock.ResourceType"""
         values2 = []
         cols2 = ['resourcetype_name']
         df2 = db.querydatafromdatabase(sql2, values2, cols2)
+        df2.rename(columns = {'resourcetype_name':''}, inplace = True)
         table2 = dbc.Table.from_dataframe(df2, striped = False, bordered = False, hover = True, size = 'sm')
 
         return [table1, table2]
@@ -58,7 +58,8 @@ layout = html.Div(
                 html.Img(
                     src=app.get_asset_url('banner.jpg'),
                     style = {
-                        'width' : '100vw', # causes picture to stretch instead of crop (maybe set height as fixed instead)
+                        'height' : '30em', # not a good solution
+                        #'width' : '100vw', # causes picture to stretch instead of crop (maybe set height as fixed instead)
                         'position' : 'relative',
                         'margin-left' : '-2em',
                         'margin-top' : '-5em',
@@ -66,9 +67,9 @@ layout = html.Div(
                         'z-index' : '1'
                     }
                 ),
-                #html.H1(['Your books, now at the', html.Br(), 'reach of your fingertips'])
             ],
-            id = 'banner'
+            id = 'banner',
+            #style = {'height' : '100%'}
         ),
         dbc.Row(
             [
@@ -134,8 +135,7 @@ layout = html.Div(
             ], align = "center", justify = "center",
             style = {
                 'margin-top' : '3em',
-                #'margin-left' : '10em',
-                #'margin-right' : '10em'
+                #'padding-top' : '-1em'
             }
         )
     ]

@@ -11,6 +11,27 @@ from app import app
 from apps import dbconnect as db
 
 @app.callback(
+        [Output('search_type', 'options')],
+        [Input('url', 'pathname')]
+)
+
+def search_populatetypes(pathname):
+    if pathname == '/' or pathname == '/home':
+        sql = """
+        SELECT searchtype_desc as label, searchtype_id as value
+        FROM utilities.searchtype;
+        """
+        values = []
+        cols = ['label', 'value']
+        df = db.querydatafromdatabase(sql, values, cols)
+        
+        search_options = df.to_dict('records')
+        return [search_options]
+    
+    else:
+        raise PreventUpdate
+
+@app.callback(
     [
         Output('resource_classifications', 'children'),
         Output('resource_types', 'children')
@@ -46,7 +67,7 @@ layout = html.Div(
         html.Div(
             [
                 html.H1(
-                    ["Your books, now at the", html.Br(),"reach of your fingertips"],
+                    ["Your books, now at the", html.Br(),"reach of your fingertips."],
                     style = {
                         'position' : 'absolute',
                         'margin-top' : '6em',
@@ -63,7 +84,7 @@ layout = html.Div(
                         'position' : 'relative',
                         'margin-left' : '-2em',
                         'margin-top' : '-5em',
-                        'filter' : 'drop-shadow(0px 25px 35px #d3d0c9)',
+                        #'filter' : 'drop-shadow(0px 25px 35px #d3d0c9)',
                         'z-index' : '1'
                     }
                 ),

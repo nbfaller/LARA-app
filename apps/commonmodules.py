@@ -5,11 +5,14 @@ from dash.exceptions import PreventUpdate
 
 from app import app
 
-navlink_style = {
-    'color' : '#f5f5f5',
-    'letter-spacing': '3px'
-}
+sidebar = html.Div(
+    [
+        html.A(['Dashboard'], href = '/user'),
+        html.A(['Profile'], href = '/user/profile')
+    ]
+)
 
+navlink_color = 'body'
 navbar = dbc.Navbar(
     [
         dbc.Col(
@@ -36,18 +39,18 @@ navbar = dbc.Navbar(
                 )
             ]
         ),
-        dbc.NavLink("🔎 SEARCH", href = "/search", style = navlink_style),
-        dbc.NavLink("🛒 CART", href = "/cart", style = navlink_style),
-        dbc.NavLink("LOG-IN", href = "/login", style = navlink_style)
+        dbc.NavLink("🔎 Search", href = "/search"),
+        dbc.NavLink("🛒 Cart", href = "/cart"),
+        dbc.NavLink("Log-in", href = "/login")
     ],
-    dark = True,
+    dark = False,
     color = 'dark',
     style = {
         'background-image' : 'url(/assets/backgrounds/LARA-pattern-navbar.png)',
         'background-size' : '3em 3em',
         'background-position' : 'center',
         'background-repeat': 'repeat',
-        'filter' : 'drop-shadow(0px 25px 35px #286052)',
+        #'filter' : 'drop-shadow(0px 25px 35px #286052)',
         'z-index' : '5'
     },
 )

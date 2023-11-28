@@ -46,6 +46,8 @@ def home_loadclassifications(pathname):
         cols1 = ['subj_tier1_ID', 'subj_tier1_name']
         df1 = db.querydatafromdatabase(sql1, values1, cols1)
         df1['subj_tier1_ID'] = df1['subj_tier1_ID'].apply(lambda x: '{0:0>3}'.format(x))
+        #df1['Links'] = "/search/results?subj_tier1_ID="+df1['subj_tier1_ID']
+        #df1['subj_tier1_name'] = "/search/results?subj_tier1_ID="+df1['subj_tier1_ID']
         df1.rename(columns = {'subj_tier1_ID':'', 'subj_tier1_name':''}, inplace = True)
         table1 = dbc.Table.from_dataframe(
             df1, striped = False, bordered = False, hover = True, size = 'sm',

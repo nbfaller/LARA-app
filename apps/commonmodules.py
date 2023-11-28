@@ -5,11 +5,21 @@ from dash.exceptions import PreventUpdate
 
 from app import app
 
-sidebar = html.Div(
+sidebar = dbc.Col(
     [
-        html.A(['Dashboard'], href = '/user'),
-        html.A(['Profile'], href = '/user/profile')
-    ]
+        html.H6(['Main']), html.Hr(),
+        html.A(['Dashboard'], href = '/user'), html.Br(),
+        html.A(['Profile'], href = '/user/profile'), html.Br(), html.Br(),
+        html.H6(['User Management']), html.Hr(),
+        html.A(['Search User'], href = '/user/search'), html.Br(),
+        html.A(['Register User'], href = '/user/register'), html.Br()
+    ], width = 2,
+    style = {
+        #'background-color' : '#ebe8e2',
+        'border-radius': '25px',
+        'margin-right' : '2em',
+        #'padding' : '1.5em'
+    }
 )
 
 navlink_color = 'body'

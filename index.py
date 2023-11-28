@@ -12,7 +12,7 @@ from apps.user import user_dashboard as user_dash
 
 # Layout definition
 CONTENT_STYLE = {
-    "margin-top" : "4em",
+    "margin-top" : "1em",
     "margin-left" : "1em",
     "margin-right" : "1em",
     "padding" : "1em 1em"

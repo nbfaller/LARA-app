@@ -8,7 +8,8 @@ from app import app
 
 from apps import commonmodules as cm
 from apps import home
-from apps.user import user_dashboard as user_dash
+from apps import login
+from apps.user import user_dashboard as user_dashboard
 
 # Layout definition
 CONTENT_STYLE = {
@@ -21,6 +22,18 @@ CONTENT_STYLE = {
 app.layout = html.Div(
     [
         dcc.Location(id = 'url', refresh = True),
+        # LOGIN DATA
+        # 1) logout indicator, storage_type='session' means that data will be retained
+        #  until browser/tab is closed (vs clearing data upon refresh)
+        dcc.Store(id='sessionlogout', data=True, storage_type='session'),
+        
+        # 2) current_user_id -- stores user_id
+        dcc.Store(id='currentuserid', data=-1, storage_type='session'),
+        
+        # 3) currentrole -- stores the role
+        # we will not use them but if you have roles, you can use it
+        dcc.Store(id='currentrole', data=-1, storage_type='session'),
+        
         cm.navbar,
         html.Div(id = 'page-content', style = CONTENT_STYLE),
         cm.footer
@@ -42,13 +55,13 @@ def displaypage(pathname):
             elif pathname == '/search':
                 returnlayout = "search"
             elif pathname == '/login':
-                returnlayout = "login"
+                returnlayout = login.layout
             elif pathname == '/about-us':
                 returnlayout = "about us"
             elif pathname == '/faq':
                 returnlayout = "faq"
             elif pathname == '/user' or pathname == '/user/dashboard':
-                returnlayout = user_dash.layout
+                returnlayout = user_dashboard.layout
             else:
                 returnlayout = 'error404'
             return [returnlayout]

@@ -16,7 +16,7 @@ sidebar = dbc.Col(
     ], width = 2,
     style = {
         #'background-color' : '#ebe8e2',
-        'border-radius': '25px',
+        #'border-radius': '25px',
         'margin-right' : '2em',
         #'padding' : '1.5em'
     }
@@ -72,11 +72,14 @@ footer = html.Footer(
                 #html.Hr(),
                 dbc.Col(
                     [
-                        html.Img(
-                            src=app.get_asset_url('nwssu-seal.png'),
-                            style = {
-                                'width' : '6em'
-                            }
+                        html.A(
+                            html.Img(
+                                src = app.get_asset_url('nwssu-seal.png'),
+                                style = {
+                                    'width' : '6em'
+                                }
+                            ),
+                            href = "https://nwssu.edu.ph"
                         )
                     ],
                     width = "auto",

@@ -11,50 +11,6 @@ import pandas as pd
 from app import app
 from apps import dbconnect as db
 
-login_modal = dbc.Modal(
-    [
-        dbc.ModalHeader(html.H3('Log-in')),
-        dbc.ModalBody(
-            dbc.Form(
-                [
-                    dbc.Row(
-                        [
-                            dbc.Label("Username", width = 1),
-                            dbc.Col(
-                                dbc.Input(
-                                    type = 'text',
-                                    id = 'login_username',
-                                    placeholder = 'Enter username'
-                                ), width = 5
-                            )
-                        ], className = 'mb-3'
-                    ),
-                    dbc.Row(
-                        [
-                            dbc.Label("Password", width = 1),
-                            dbc.Col(
-                                dbc.Input(
-                                    type = 'password',
-                                    id = 'login_password',
-                                    placeholder = 'Enter password'
-                                ), width = 5
-                            )
-                        ], className = 'mb-3'
-                    )
-                ]
-            )
-        ),
-        dbc.ModalFooter(
-            dbc.Button(
-                "Log-in", color = 'secondary', id = 'login_loginbtn'
-            )
-        )
-    ],
-    centered = True,
-    id = 'login_modal',
-    backdrop = 'static'
-)
-
 layout = html.Div(
     [
         dbc.Alert('Username or password is incorrect.', color = "danger", id = 'login_alert', is_open = False),

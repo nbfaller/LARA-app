@@ -5,6 +5,50 @@ from dash.exceptions import PreventUpdate
 
 from app import app
 
+login_modal = dbc.Modal(
+    [
+        dbc.ModalHeader(html.H3('Log-in')),
+        dbc.ModalBody(
+            dbc.Form(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Label("Username", width = 1),
+                            dbc.Col(
+                                dbc.Input(
+                                    type = 'text',
+                                    id = 'login_username',
+                                    placeholder = 'Enter username'
+                                ), width = 5
+                            )
+                        ], className = 'mb-3'
+                    ),
+                    dbc.Row(
+                        [
+                            dbc.Label("Password", width = 1),
+                            dbc.Col(
+                                dbc.Input(
+                                    type = 'password',
+                                    id = 'login_password',
+                                    placeholder = 'Enter password'
+                                ), width = 5
+                            )
+                        ], className = 'mb-3'
+                    )
+                ]
+            )
+        ),
+        dbc.ModalFooter(
+            dbc.Button(
+                "Log-in", color = 'secondary', id = 'login_loginbtn'
+            )
+        )
+    ],
+    centered = True,
+    id = 'login_modal',
+    backdrop = 'static'
+)
+
 sidebar = dbc.Col(
     [
         html.H6(['Main']), html.Hr(),
@@ -15,10 +59,10 @@ sidebar = dbc.Col(
         html.A(['Register User'], href = '/user/register'), html.Br()
     ], width = 2,
     style = {
-        #'background-color' : '#ebe8e2',
-        #'border-radius': '25px',
+        'background-color' : '#ebe8e2',
+        'border-radius': '25px',
         'margin-right' : '2em',
-        #'padding' : '1.5em'
+        'padding' : '1.5em'
     }
 )
 
@@ -51,7 +95,7 @@ navbar = dbc.Navbar(
         ),
         dbc.NavLink("🔎 Search", href = "/search"),
         dbc.NavLink("🛒 Cart", href = "/cart"),
-        dbc.NavLink("Log-in", href = "/login")
+        dbc.NavLink("Log-in", id = 'navbar_login', href = "/login")
     ],
     dark = False,
     color = 'dark',

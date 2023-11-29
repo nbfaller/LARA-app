@@ -17,7 +17,9 @@ layout = html.Div(
             [
                 cm.sidebar,
                 dbc.Col(
-                    html.H1(['Borrowing History'])
+                    [
+                        html.H1(['Borrowing History'])
+                    ]
                 )
             ]
         )

@@ -11,6 +11,7 @@ from apps import commonmodules as cm
 from app import app
 from apps import dbconnect as db
 
+# Callback for populating user type and sex assigned at birth dropdown menus
 @app.callback(
     [
         Output('user_type', 'options'),
@@ -46,6 +47,7 @@ def register_populateusertypes(pathname):
     else:
         raise PreventUpdate
 
+# Callback for populating college dropdown menu
 @app.callback(
     [
         Output('college_id', 'options')
@@ -68,6 +70,7 @@ def register_populatecolleges(pathname):
         return [colleges]
     else: raise PreventUpdate
 
+# Callback for populating degree program dropdown menu
 @app.callback(
     [
         Output('degree_id', 'options')
@@ -93,6 +96,7 @@ def register_populatedegrees(pathname, college_id):
         else: raise PreventUpdate
     else: raise PreventUpdate
 
+# Callback for populating office dropdown menu
 @app.callback(
     [
         Output('office_id', 'options')
@@ -115,6 +119,7 @@ def register_populateoffices(pathname):
         return [offices]
     else: raise PreventUpdate
 
+# Callback for showing user type-specific sections of the registration page
 @app.callback(
         [
             Output('userspecific_form', 'children'),
@@ -218,6 +223,7 @@ def register_showspecificforms(pathname, user_type):
         else: raise PreventUpdate
     else: raise PreventUpdate
 
+# Callback for populating regions
 @app.callback(
     [
         Output('present_region_id', 'options'),
@@ -228,7 +234,6 @@ def register_showspecificforms(pathname, user_type):
     ]
 )
 
-# Callback for populating regions
 def register_populateregions(pathname):
     if pathname == '/user/register':
         sql = """SELECT region_name as label, region_id as value
@@ -519,19 +524,6 @@ def show_permanentbrgy(pathname, permanent_region_id, permanent_province_id, per
             return [dropdown_permanent_barangay]
         else: return [None]
     else: raise PreventUpdate
-
-@app.callback(
-        [
-            Output('present_street', 'children')
-        ],
-        [
-            Input('url', 'pathname'),
-            Input('present_region_id', 'value'),
-            Input('address_province', 'value'),
-            Input('address_citymun', 'value'),
-            Input('address_barangay', 'value')
-        ]
-)
 
 # Callback for populating present barangay dropdown
 @app.callback(

@@ -87,7 +87,7 @@ layout = html.Div(
                         'margin-left' : '-2em',
                         'margin-top' : '-5em',
                         #'filter' : 'drop-shadow(0px 25px 35px #d3d0c9)',
-                        'z-index' : '1'
+                        'z-index' : '-1'
                     }
                 ),
             ],

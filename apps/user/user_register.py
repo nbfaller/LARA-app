@@ -70,15 +70,6 @@ def register_populatecolleges(pathname):
 
 @app.callback(
     [
-        Output('office_id', 'options')
-    ],
-    [
-        Input('url', 'pathname')
-    ]
-)
-
-@app.callback(
-    [
         Output('degree_id', 'options')
     ],
     [
@@ -101,6 +92,15 @@ def register_populatedegrees(pathname, college_id):
             return [degrees]
         else: raise PreventUpdate
     else: raise PreventUpdate
+
+@app.callback(
+    [
+        Output('office_id', 'options')
+    ],
+    [
+        Input('url', 'pathname')
+    ]
+)
 
 def register_populateoffices(pathname):
     if pathname == '/user/register':
@@ -219,10 +219,16 @@ def register_showspecificforms(pathname, user_type):
     else: raise PreventUpdate
 
 @app.callback(
-    [Output('address_region', 'options')],
-    [Input('url', 'pathname')]
+    [
+        Output('present_region_id', 'options'),
+        Output('permanent_region_id', 'options')
+    ],
+    [
+        Input('url', 'pathname')
+    ]
 )
 
+# Callback for populating regions
 def register_populateregions(pathname):
     if pathname == '/user/register':
         sql = """SELECT region_name as label, region_id as value
@@ -234,89 +240,284 @@ def register_populateregions(pathname):
         df = df.sort_values('value')
 
         regions = df.to_dict('records')
-        return [regions]
+        return [regions, regions]
     else:
         raise PreventUpdate
 
+# Callback for showing present province dropdown once present region is selected
 @app.callback(
         [
             Output('present_province', 'children')
         ],
         [
             Input('url', 'pathname'),
-            Input('address_region', 'value')
+            Input('present_region_id', 'value')
         ]
 )
 
-def show_addressprovince(pathname, region_id):
-    dropdown_province = [
+def show_presentprovinces(pathname, present_region_id):
+    dropdown_present_province = [
         dbc.Label("Province", width = 2),
         dbc.Col(
             dcc.Dropdown(
-                id = 'address_province',
+                id = 'present_province_id',
             ), width = 6
         )
     ]
     if pathname == '/user/register':
-        if region_id:
-            return [dropdown_province]
-        elif region_id == None: return [None]
+        if present_region_id:
+            return [dropdown_present_province]
+        else: return [None]
+    else: raise PreventUpdate
+
+# Callback for showing permanent province dropdown once permanent region is selected
+@app.callback(
+        [
+            Output('permanent_province', 'children')
+        ],
+        [
+            Input('url', 'pathname'),
+            Input('permanent_region_id', 'value')
+        ]
+)
+
+def show_permanentprovinces(pathname, permanent_region_id):
+    dropdown_permanent_province = [
+        dbc.Label("Province", width = 2),
+        dbc.Col(
+            dcc.Dropdown(
+                id = 'permanent_province_id',
+            ), width = 6
+        )
+    ]
+    if pathname == '/user/register':
+        if permanent_region_id:
+            return [dropdown_permanent_province]
+        else: return [None]
+    else: raise PreventUpdate
+
+# Callback for populating present province dropdown
+@app.callback(
+    [
+        Output('present_province_id', 'options')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('present_region_id', 'value')
+    ]
+)
+
+def populate_presentprovinces(pathname, present_region_id):
+    if pathname == '/user/register':
+        if present_region_id:
+            sql = """SELECT province_name as label, province_id as value
+            FROM userblock.addressprovince WHERE region_id = 
+            """
+            values = []
+            cols = ['label', 'value']
+            sql += str(present_region_id)+";"
+
+            df = db.querydatafromdatabase(sql, values, cols)
+            df = df.sort_values('value')
+
+            return [df.to_dict('records')]
         else: raise PreventUpdate
     else: raise PreventUpdate
 
+# Callback for populating permanent province dropdown
+@app.callback(
+    [
+        Output('permanent_province_id', 'options')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('permanent_region_id', 'value')
+    ]
+)
+
+def populate_permanentprovinces(pathname, permanent_region_id):
+    if pathname == '/user/register':
+        if permanent_region_id:
+            sql = """SELECT province_name as label, province_id as value
+            FROM userblock.addressprovince WHERE region_id = 
+            """
+            values = []
+            cols = ['label', 'value']
+            sql += str(permanent_region_id)+";"
+
+            df = db.querydatafromdatabase(sql, values, cols)
+            df = df.sort_values('value')
+
+            return [df.to_dict('records')]
+        else: raise PreventUpdate
+    else: raise PreventUpdate
+
+# Callback for showing present citymun dropdown once present province and region is selected
 @app.callback(
         [
             Output('present_citymun', 'children')
         ],
         [
             Input('url', 'pathname'),
-            Input('address_region', 'value'),
-            Input('address_province', 'value')
+            Input('present_region_id', 'value'),
+            Input('present_province_id', 'value')
         ]
 )
 
-def show_addresscitymun(pathname, region_id, prov_id):
-    dropdown_citymun = [
+def show_presentcitymun(pathname, present_region_id, present_province_id):
+    dropdown_present_citymun = [
         dbc.Label("City/Municipality", width = 2),
         dbc.Col(
             dcc.Dropdown(
-                id = 'address_citymun',
+                id = 'present_citymun_id',
             ), width = 6
         )
     ]
     if pathname == '/user/register':
-        if region_id and prov_id:
-            return [dropdown_citymun]
-        elif region_id == None or prov_id == None: return [None]
+        if present_region_id and present_province_id:
+            return [dropdown_present_citymun]
+        else: return [None]
+    else: raise PreventUpdate
+
+# Callback for showing permanent citymun dropdown once permanent province and region is selected
+@app.callback(
+        [
+            Output('permanent_citymun', 'children')
+        ],
+        [
+            Input('url', 'pathname'),
+            Input('permanent_region_id', 'value'),
+            Input('permanent_province_id', 'value')
+        ]
+)
+
+def show_permanentcitymun(pathname, permanent_region_id, permanent_province_id):
+    dropdown_permanent_citymun = [
+        dbc.Label("City/Municipality", width = 2),
+        dbc.Col(
+            dcc.Dropdown(
+                id = 'permanent_citymun_id',
+            ), width = 6
+        )
+    ]
+    if pathname == '/user/register':
+        if permanent_region_id and permanent_province_id:
+            return [dropdown_permanent_citymun]
+        else: return [None]
+    else: raise PreventUpdate
+
+# Callback for populating present citymun dropdown
+@app.callback(
+    [
+        Output('present_citymun_id', 'options')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('present_region_id', 'value'),
+        Input('present_province_id', 'value')
+    ]
+)
+
+def populate_presentcitymun(pathname, present_region_id, present_province_id):
+    if pathname == '/user/register':
+        if present_region_id and present_province_id:
+            sql = """SELECT citymun_name as label, citymun_id as value
+            FROM userblock.addresscitymun WHERE
+            """
+            values = []
+            cols = ['label', 'value']
+            sql += " region_id = "+str(present_region_id)+" AND province_id = "+str(present_province_id)+";"
+
+            df = db.querydatafromdatabase(sql, values, cols)
+            df = df.sort_values('value')
+
+            return [df.to_dict('records')]
         else: raise PreventUpdate
     else: raise PreventUpdate
 
+# Callback for populating permanent citymun dropdown
+@app.callback(
+    [
+        Output('permanent_citymun_id', 'options')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('permanent_region_id', 'value'),
+        Input('permanent_province_id', 'value')
+    ]
+)
+
+def populate_permanentcitymun(pathname, permanent_region_id, permanent_province_id):
+    if pathname == '/user/register':
+        if permanent_region_id and permanent_province_id:
+            sql = """SELECT citymun_name as label, citymun_id as value
+            FROM userblock.addresscitymun WHERE
+            """
+            values = []
+            cols = ['label', 'value']
+            sql += " region_id = "+str(permanent_region_id)+" AND province_id = "+str(permanent_province_id)+";"
+
+            df = db.querydatafromdatabase(sql, values, cols)
+            df = df.sort_values('value')
+
+            return [df.to_dict('records')]
+        else: raise PreventUpdate
+    else: raise PreventUpdate
+
+# Callback for showing present barangay dropdown once present province, region, and citymun is selected
 @app.callback(
         [
             Output('present_barangay', 'children')
         ],
         [
             Input('url', 'pathname'),
-            Input('address_region', 'value'),
-            Input('address_province', 'value'),
-            Input('address_citymun', 'value')
+            Input('present_region_id', 'value'),
+            Input('present_province_id', 'value'),
+            Input('present_citymun_id', 'value')
         ]
 )
 
-def show_addressbarangay(pathname, region_id, prov_id, citymun_id):
-    dropdown_barangay = [
+def show_presentbrgy(pathname, present_region_id, present_province_id, present_citymun_id):
+    dropdown_present_barangay = [
         dbc.Label("Barangay", width = 2),
         dbc.Col(
             dcc.Dropdown(
-                id = 'address_barangay',
+                id = 'present_brgy_id',
             ), width = 6
         )
     ]
     if pathname == '/user/register':
-        if region_id and prov_id and citymun_id:
-            return [dropdown_barangay]
-        elif region_id == None or prov_id == None or citymun_id == None: return [None]
-        else: raise PreventUpdate
+        if present_region_id and present_province_id and present_citymun_id:
+            return [dropdown_present_barangay]
+        else: return [None]
+    else: raise PreventUpdate
+
+# Callback for showing permanent barangay dropdown once permanent province, region, and citymun is selected
+@app.callback(
+        [
+            Output('permanent_barangay', 'children')
+        ],
+        [
+            Input('url', 'pathname'),
+            Input('permanent_region_id', 'value'),
+            Input('permanent_province_id', 'value'),
+            Input('permanent_citymun_id', 'value')
+        ]
+)
+
+def show_permanentbrgy(pathname, permanent_region_id, permanent_province_id, permanent_citymun_id):
+    dropdown_permanent_barangay = [
+        dbc.Label("Barangay", width = 2),
+        dbc.Col(
+            dcc.Dropdown(
+                id = 'permanent_brgy_id',
+            ), width = 6
+        )
+    ]
+    if pathname == '/user/register':
+        if permanent_region_id and permanent_province_id and permanent_citymun_id:
+            return [dropdown_permanent_barangay]
+        else: return [None]
     else: raise PreventUpdate
 
 @app.callback(
@@ -325,121 +526,129 @@ def show_addressbarangay(pathname, region_id, prov_id, citymun_id):
         ],
         [
             Input('url', 'pathname'),
-            Input('address_region', 'value'),
+            Input('present_region_id', 'value'),
             Input('address_province', 'value'),
             Input('address_citymun', 'value'),
             Input('address_barangay', 'value')
         ]
 )
 
-def show_addressstreet(pathname, region_id, prov_id, citymun_id, brgy_id):
-    input_street = [
+# Callback for populating present barangay dropdown
+@app.callback(
+    [
+        Output('present_brgy_id', 'options')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('present_region_id', 'value'),
+        Input('present_province_id', 'value'),
+        Input('present_citymun_id', 'value')
+    ]
+)
+
+def populate_presentbrgy(pathname, present_region_id, present_province_id, present_citymun_id):
+    if pathname == '/user/register':
+        if present_region_id and present_province_id and present_citymun_id:
+            sql = """SELECT brgy_name as label, brgy_id as value
+            FROM userblock.addressbarangay WHERE
+            """
+            values = []
+            cols = ['label', 'value']
+            sql += " region_id = "+str(present_region_id)+" AND province_id = "+str(present_province_id)+" AND citymun_id = "+str(present_citymun_id)+";"
+
+            df = db.querydatafromdatabase(sql, values, cols)
+            df = df.sort_values('value')
+
+            return [df.to_dict('records')]
+        else: raise PreventUpdate
+    else: raise PreventUpdate
+
+# Callback for populating permanent barangay dropdown
+@app.callback(
+    [
+        Output('permanent_brgy_id', 'options')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('permanent_region_id', 'value'),
+        Input('permanent_province_id', 'value'),
+        Input('permanent_citymun_id', 'value')
+    ]
+)
+
+def populate_permanentbrgy(pathname, permanent_region_id, permanent_province_id, permanent_citymun_id):
+    if pathname == '/user/register':
+        if permanent_region_id and permanent_province_id and permanent_citymun_id:
+            sql = """SELECT brgy_name as label, brgy_id as value
+            FROM userblock.addressbarangay WHERE
+            """
+            values = []
+            cols = ['label', 'value']
+            sql += " region_id = "+str(permanent_region_id)+" AND province_id = "+str(permanent_province_id)+" AND citymun_id = "+str(permanent_citymun_id)+";"
+
+            df = db.querydatafromdatabase(sql, values, cols)
+            df = df.sort_values('value')
+
+            return [df.to_dict('records')]
+        else: raise PreventUpdate
+    else: raise PreventUpdate
+
+# Callback for showing present street address input once permanent province, region, citymun, and barangay is selected
+@app.callback(
+        [
+            Output('present_street_input', 'children')
+        ],
+        [
+            Input('url', 'pathname'),
+            Input('present_region_id', 'value'),
+            Input('present_province_id', 'value'),
+            Input('present_citymun_id', 'value'),
+            Input('present_brgy_id', 'value')
+        ]
+)
+
+def show_presentstreet(pathname, present_region_id, present_province_id, present_citymun_id, present_brgy_id):
+    input_present_street = [
         dbc.Label("Street address", width = 2),
         dbc.Col(
             dbc.Input(
-                id = 'address_street',
+                id = 'present_street',
             ), width = 6
         )
     ]
     if pathname == '/user/register':
-        if region_id and prov_id and citymun_id and brgy_id:
-            return [input_street]
-        elif region_id == None or prov_id == None or citymun_id == None or brgy_id == None: return [None]
-        else: raise PreventUpdate
+        if present_region_id and present_province_id and present_citymun_id and present_brgy_id:
+            return [input_present_street]
+        else: return [None]
     else: raise PreventUpdate
 
+# Callback for showing permanent street address input once permanent province, region, citymun, and barangay is selected
 @app.callback(
-    [
-        Output('address_province', 'options')
-    ],
-    [
-        Input('url', 'pathname'),
-        Input('address_region', 'value')
-    ]
+        [
+            Output('permanent_street_input', 'children')
+        ],
+        [
+            Input('url', 'pathname'),
+            Input('permanent_region_id', 'value'),
+            Input('permanent_province_id', 'value'),
+            Input('permanent_citymun_id', 'value'),
+            Input('permanent_brgy_id', 'value')
+        ]
 )
 
-def register_populateprovinces(pathname, region_id):
-    if pathname == '/user/register':
-        if region_id:
-            sql = """SELECT province_name as label, province_id as value
-            FROM userblock.addressprovince WHERE region_id = 
-            """
-            values = []
-            cols = ['label', 'value']
-
-            if region_id:
-                sql += str(region_id)+";"
-
-            df = db.querydatafromdatabase(sql, values, cols)
-            df = df.sort_values('value')
-
-            #print(sql)
-            provinces = df.to_dict('records')
-            return [provinces]
-        else: raise PreventUpdate
-    else: raise PreventUpdate
-
-@app.callback(
-    [
-        Output('address_citymun', 'options')
-    ],
-    [
-        Input('url', 'pathname'),
-        Input('address_province', 'value'),
-        Input('address_region', 'value')
+def show_permanentstreet(pathname, permanent_region_id, permanent_prov_id, permanent_citymun_id, permanent_brgy_id):
+    input_permanent_street = [
+        dbc.Label("Street address", width = 2),
+        dbc.Col(
+            dbc.Input(
+                id = 'permanent_street',
+            ), width = 6
+        )
     ]
-)
-
-def register_populatecitymun(pathname, province_id, region_id):
     if pathname == '/user/register':
-        if region_id and province_id:
-            sql = """SELECT citymun_name as label, citymun_id as value
-            FROM userblock.addresscitymun WHERE 
-            """
-            values = []
-            cols = ['label', 'value']
-
-            if province_id:
-                sql += ' province_id = '+str(province_id)+' AND region_id = '+str(region_id)+";"
-
-            df = db.querydatafromdatabase(sql, values, cols)
-            df = df.sort_values('value')
-
-            citymun = df.to_dict('records')
-            return [citymun]
-        else: raise PreventUpdate
-    else: raise PreventUpdate
-
-@app.callback(
-    [
-        Output('address_barangay', 'options')
-    ],
-    [
-        Input('url', 'pathname'),
-        Input('address_citymun', 'value'),
-        Input('address_region', 'value'),
-        Input('address_province', 'value')
-    ]
-)
-
-def register_populatebarangay(pathname, citymun_id, region_id, province_id):
-    if pathname == '/user/register':
-        if region_id and province_id and citymun_id:
-            sql = """SELECT brgy_name as label, brgy_id as value
-            FROM userblock.addressbarangay WHERE 
-            """
-            values = []
-            cols = ['label', 'value']
-
-            if citymun_id:
-                sql += 'citymun_id = '+str(citymun_id)+' AND province_id = '+str(province_id)+' AND region_id = '+str(region_id)+";"
-
-            df = db.querydatafromdatabase(sql, values, cols)
-            df = df.sort_values('value')
-
-            barangay = df.to_dict('records')
-            return [barangay]
-        else: raise PreventUpdate
+        if permanent_region_id and permanent_prov_id and permanent_citymun_id and permanent_brgy_id:
+            return [input_permanent_street]
+        else: return [None]
     else: raise PreventUpdate
 
 layout = html.Div(
@@ -476,7 +685,7 @@ layout = html.Div(
                                         html.H3("Basic Information"),
                                         dbc.Row(
                                             [
-                                                dbc.Label("Surname", width = 2),
+                                                dbc.Label("Name", width = 2),
                                                 dbc.Col(
                                                     dbc.Input(
                                                         type = 'text',
@@ -547,7 +756,7 @@ layout = html.Div(
                                                 dbc.Label("Region", width = 2),
                                                 dbc.Col(
                                                     dcc.Dropdown(
-                                                        id = 'address_region'
+                                                        id = 'present_region_id'
                                                     ), width = 6
                                                 )
                                             ]
@@ -555,7 +764,28 @@ layout = html.Div(
                                         dbc.Row(id = 'present_province'),
                                         dbc.Row(id = 'present_citymun'),
                                         dbc.Row(id = 'present_barangay'),
-                                        dbc.Row(id = 'present_street'),
+                                        dbc.Row(id = 'present_street_input'),
+                                        html.Hr(),
+                                    ], 
+                                    id = 'present_address'
+                                ),
+                                html.Div(
+                                    [
+                                        html.H3("Permanent Address"),
+                                        dbc.Row(
+                                            [
+                                                dbc.Label("Region", width = 2),
+                                                dbc.Col(
+                                                    dcc.Dropdown(
+                                                        id = 'permanent_region_id'
+                                                    ), width = 6
+                                                )
+                                            ]
+                                        ),
+                                        dbc.Row(id = 'permanent_province'),
+                                        dbc.Row(id = 'permanent_citymun'),
+                                        dbc.Row(id = 'permanent_barangay'),
+                                        dbc.Row(id = 'permanent_street_input'),
                                         html.Hr(),
                                     ], 
                                     id = 'present_address'
@@ -611,6 +841,24 @@ layout = html.Div(
                     ]
                 )
             ]
+        ),
+        dbc.Modal(
+            [
+                dbc.ModalHeader(
+                    html.H4('Confirm details')
+                ),
+                dbc.ModalBody(
+                    'Edit me'
+                ),
+                dbc.ModalFooter(
+                    dbc.Button(
+                        "Confirm", href = '/user/profile'
+                    )
+                )
+            ],
+            centered = True,
+            id = 'register_confirmation',
+            backdrop = 'static'
         )
     ]
 )

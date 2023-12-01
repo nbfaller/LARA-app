@@ -52,12 +52,16 @@ layout = html.Div(
                         )
                     ]
                 )
-            ]
+            ],
+            style = {
+                'width' : '45vw',
+                'position' : 'fixed',
+                'top' : '50%',
+                'left' : '50%',
+                'transform' : 'translate(-50%, -50%)'
+            }
         )
-    ],
-    style = {
-        'width' : '700px',
-    }
+    ]
 )
 
 @app.callback(

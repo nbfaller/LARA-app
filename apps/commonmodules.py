@@ -105,7 +105,8 @@ navbar = dbc.Navbar(
         'background-position' : 'center',
         'background-repeat': 'repeat',
         #'filter' : 'drop-shadow(0px 25px 35px #286052)',
-        'z-index' : '5'
+        #'filter' : 'drop-shadow(0px 25px 35px #d3d0c9)',
+        'z-index' : '1'
     },
 )
 
@@ -154,6 +155,8 @@ footer = html.Footer(
         )
     ],
     style = {
+        #'position' : 'relative',
+        #'bottom' : '0'
         #'background-image' : 'linear-gradient(rgba(235,232,226,0), rgba(235,232,226,1))'
     }
 )

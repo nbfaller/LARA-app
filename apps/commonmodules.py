@@ -59,8 +59,12 @@ sidebar = dbc.Col(
         html.A(['Register User'], href = '/user/register'), html.Br()
     ], width = 2,
     style = {
-        'background-color' : '#ebe8e2',
+        'background-color' : '#f5f5f5',
         'border-radius': '25px',
+        'border-style' : 'solid',
+        'border-width' : '1px',
+        'border-color' : '#ebe8e2',
+        #'filter' : 'drop-shadow(0px 0px 15px #d3d0c9)',
         'margin-right' : '2em',
         'padding' : '1.5em'
     }
@@ -102,7 +106,7 @@ navbar = dbc.Navbar(
     style = {
         'background-image' : 'url(/assets/backgrounds/LARA-pattern-navbar.png)',
         'background-size' : '3em 3em',
-        'background-position' : 'center',
+        'background-position' : 'center top',
         'background-repeat': 'repeat',
         #'filter' : 'drop-shadow(0px 25px 35px #286052)',
         #'filter' : 'drop-shadow(0px 25px 35px #d3d0c9)',

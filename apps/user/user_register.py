@@ -5,6 +5,7 @@ import dash
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import pandas as pd
+import numpy
 #import dash_ag_grid as dag
 
 from apps import commonmodules as cm
@@ -643,6 +644,47 @@ def show_permanentstreet(pathname, permanent_region_id, permanent_prov_id, perma
         else: return [None]
     else: raise PreventUpdate
 
+# Callback for automatically generating username and checking existing list of usernames
+@app.callback(
+    [
+        Output('user_username', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('user_fname', 'value'),
+        Input('user_mname', 'value'),
+        Input('user_lname', 'value'),
+    ]
+)
+
+def generate_username(pathname, user_fname, user_mname, user_lname):
+    if pathname == '/user/register':
+        if user_fname and user_mname and user_lname:
+            user_username = user_fname[0]+user_mname[0]+user_lname
+        elif user_fname and user_lname:
+            user_username = user_fname[0]+user_lname
+        else: user_username = None
+
+        if user_username:
+            sql = """SELECT user_username
+                FROM userblock.RegisteredUser
+                WHERE user_username LIKE %s;"""
+            values = [f"%{user_username.lower()}%"]
+            cols = ['user_username']
+            df = db.querydatafromdatabase(sql, values, cols)
+            
+            if not df.empty:
+                lastchar = df.tail().values[0][0][-1]
+                if lastchar.isnumeric():
+                    return [user_username.lower()+str(int(lastchar)+1)]
+                else:
+                    return [user_username.lower()+"1"]
+            else:
+                return [user_username.lower()]
+
+        return [None]
+    else: raise PreventUpdate
+
 layout = html.Div(
     [
         dbc.Row(
@@ -698,6 +740,19 @@ layout = html.Div(
                                                         id = 'user_mname',
                                                         placeholder = 'Enter middle name'
                                                     ), width = 3
+                                                )
+                                            ], className = 'mb-3'
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Label("Username", width = 2),
+                                                dbc.Col(
+                                                    dbc.Input(
+                                                        type = 'text',
+                                                        id = 'user_username',
+                                                        placeholder = 'Username',
+                                                        disabled = True,
+                                                    ), width = 9
                                                 )
                                             ], className = 'mb-3'
                                         ),

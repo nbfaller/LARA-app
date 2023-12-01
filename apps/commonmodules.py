@@ -100,7 +100,7 @@ navbar = dbc.Navbar(
         ),
         dbc.NavLink("🔎 Search", href = "/search"),
         dbc.NavLink("🛒 Cart", href = "/cart"),
-        dbc.NavLink("Log-in", id = 'navbar_login', href = "/login")
+        dbc.NavLink("🔑 Log-in", id = 'navbar_login', href = "/login")
     ],
     dark = False,
     color = 'dark',

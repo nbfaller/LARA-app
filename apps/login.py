@@ -16,50 +16,72 @@ layout = html.Div(
         dbc.Alert('Username or password is incorrect.', color = "danger", id = 'login_alert', is_open = False),
         dbc.Card(
             [
-                dbc.CardHeader(html.H3('Log-in')),
+                dbc.CardHeader(
+                    html.H3('Log-in'),
+                    style = {'text-align' : 'center'}
+                ),
                 dbc.CardBody(
                     [
+                        dbc.Row(
+                            html.Img(
+                                src=app.get_asset_url('logo/LARA-logo-500px-orig-green.png'),
+                                style = {
+                                    'height' : '35%',
+                                    'width' : '35%',
+                                    'margin' : 'auto',
+                                }
+                            ),
+                            style = {
+                                'margin-top' : '1em',
+                                'margin-bottom' : '2em'
+                            }
+                        ),
                         dbc.Form(
                             [
                                 dbc.Row(
                                     [
-                                        dbc.Label("Username", width = 2),
+                                        #dbc.Label("Username", width = 3),
                                         dbc.Col(
                                             dbc.Input(
                                                 type = 'text',
                                                 id = 'login_username',
-                                                placeholder = 'Enter username'
-                                            ), width = 5
+                                                placeholder = 'Username'
+                                            )#, width = 7
                                         )
                                     ], className = 'mb-3'
                                 ),
                                 dbc.Row(
                                     [
-                                        dbc.Label("Password", width = 2),
+                                        #dbc.Label("Password", width = 3),
                                         dbc.Col(
                                             dbc.Input(
                                                 type = 'password',
                                                 id = 'login_password',
-                                                placeholder = 'Enter password'
-                                            ), width = 5
+                                                placeholder = 'Password'
+                                            )#, width = 7
                                         )
                                     ], className = 'mb-3'
                                 )
-                            ]
+                            ], className = 'align-self-center'
                         ),
-                        dbc.Button(
-                            "Log-in", color = 'secondary', id = 'login_loginbtn'
+                        dbc.Row(
+                            dbc.Button(
+                                "Log-in",
+                                color = 'primary',
+                                id = 'login_loginbtn'
+                            ),
+                            style = {
+                                'margin' : 'auto'
+                            }
                         )
                     ]
                 )
             ],
             style = {
-                'width' : '700px',
-                'margin-bottom' : '8em',
-                #'position' : 'relative',
-                'top' : '12em',
-                'left' : '50%',
-                'transform' : 'translate(-50%, -50%)'
+                'width' : '400px',
+                'margin' : 'auto',
+                'position' : 'relative',
+                'top' : '2em'
             }
         )
     ]

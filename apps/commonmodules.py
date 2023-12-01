@@ -127,10 +127,7 @@ footer = html.Footer(
                             href = "https://nwssu.edu.ph"
                         )
                     ],
-                    width = "auto",
-                    style = {
-                        #'background-color' : '#000'
-                    },
+                    width = "auto"
                 ),
                 dbc.Col(
                     [
@@ -138,25 +135,17 @@ footer = html.Footer(
                         "Copyright © 2024. University Library, Northwest Samar State University", html.Br(),
                         html.A("About LÁRA", href = "about-us"), " • ", html.A("Main Website", href = "https://nwssu.edu.ph"), " • ", html.A("Frequently Asked Questions", href = "faq"),
                     ],
-                    width = "auto",
-                    style = {
-                        #'background-color' : '#000'
-                    },
+                    width = "auto"
                 ),
             ],
             style = {
-                'margin-top' : '2em',
-                #'margin-left' : '10em',
-                #'margin-right' : '10em',
-                'padding' : '0em 0em 2em 0em'
-                #'background-color' : '#000'
+                'margin' : 'auto',
             },
-            align = "center", justify = "center"
+            align = 'center', justify = 'center'
         )
     ],
     style = {
-        #'position' : 'relative',
-        #'bottom' : '0'
-        #'background-image' : 'linear-gradient(rgba(235,232,226,0), rgba(235,232,226,1))'
+        'margin-top' : '4em',
+        'padding' : '2em 0em 2em 0em'
     }
 )

@@ -72,27 +72,28 @@ layout = html.Div(
                     ["Your books, now at the", html.Br(),"reach of your fingertips."],
                     style = {
                         'position' : 'absolute',
-                        'margin-top' : '6em',
-                        'margin-left' : '1em',
+                        'bottom' : '2em',
+                        'left' : '2em',
                         'z-index' : '2',
-                        'color' : '#f5f5f5'
+                        'color' : '#f5f5f5',
                     }
                 ),
                 html.Img(
                     src=app.get_asset_url('banner.jpg'),
                     style = {
-                        'height' : '30em', # not a good solution
-                        #'width' : '100vw', # causes picture to stretch instead of crop (maybe set height as fixed instead)
-                        'position' : 'relative',
-                        'margin-left' : '-2em',
-                        'margin-top' : '-5em',
-                        #'filter' : 'drop-shadow(0px 25px 35px #d3d0c9)',
+                        'height' : '30em',
                         'z-index' : '-1'
                     }
                 ),
             ],
             id = 'banner',
-            #style = {'height' : '100%'}
+            style = {
+                'position' : 'relative',
+                'margin-left' : '-2em',
+                'margin-top' : '-2em',
+                'width' : '100vw',
+                'overflow' : 'hidden'
+            }
         ),
         dbc.Row(
             [

@@ -26,7 +26,7 @@ def register_populateusertypes(pathname):
     if pathname == '/user/register':
         sql1 = """
         SELECT usertype_name as label, usertype_id as value
-        FROM utilities.usertype;
+        FROM userblock.usertype;
         """
         values1 = []
         cols1 = ['label', 'value']
@@ -36,7 +36,7 @@ def register_populateusertypes(pathname):
 
         sql2 = """
         SELECT assignedsex_name as label, assignedsex_code as value
-        FROM utilities.assignedsex;
+        FROM userblock.assignedsex;
         """
         values2 = []
         cols2 = ['label', 'value']
@@ -731,7 +731,7 @@ layout = html.Div(
                                                 dbc.Col(
                                                     dbc.Input(
                                                         type = 'text',
-                                                        id = 'user_emailaddress',
+                                                        id = 'user_email',
                                                         placeholder = 'example@nwssu.edu.ph'
                                                     ), width = 3
                                                 )

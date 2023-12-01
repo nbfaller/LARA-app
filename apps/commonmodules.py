@@ -59,12 +59,13 @@ sidebar = dbc.Col(
         html.A(['Register User'], href = '/user/register'), html.Br()
     ], width = 2,
     style = {
-        'background-color' : '#f5f5f5',
-        'border-radius': '25px',
-        'border-style' : 'solid',
-        'border-width' : '1px',
-        'border-color' : '#ebe8e2',
+        #'background-color' : '#f5f5f5',
+        #'border-radius': '25px',
+        #'border-style' : 'solid',
+        #'border-width' : '1px',
+        #'border-color' : '#ebe8e2',
         #'filter' : 'drop-shadow(0px 0px 15px #d3d0c9)',
+        'border-right' : '1px solid #ebe8e2',
         'margin-right' : '2em',
         'padding' : '1.5em'
     }
@@ -149,7 +150,7 @@ footer = html.Footer(
         )
     ],
     style = {
-        'margin-top' : '4em',
+        'margin-top' : '2em',
         'padding' : '2em 0em 2em 0em'
     }
 )

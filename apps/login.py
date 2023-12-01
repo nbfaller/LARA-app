@@ -54,9 +54,10 @@ layout = html.Div(
                 )
             ],
             style = {
-                'width' : '45vw',
-                'position' : 'fixed',
-                'top' : '50%',
+                'width' : '700px',
+                'margin-bottom' : '8em',
+                #'position' : 'relative',
+                'top' : '12em',
                 'left' : '50%',
                 'transform' : 'translate(-50%, -50%)'
             }

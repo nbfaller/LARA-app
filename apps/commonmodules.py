@@ -65,7 +65,7 @@ sidebar = dbc.Col(
         #'border-width' : '1px',
         #'border-color' : '#ebe8e2',
         #'filter' : 'drop-shadow(0px 0px 15px #d3d0c9)',
-        'border-right' : '1px solid #ebe8e2',
+        #'border-right' : '1px solid #ebe8e2',
         'margin-right' : '2em',
         'padding' : '1.5em'
     }

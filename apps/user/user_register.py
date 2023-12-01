@@ -669,6 +669,8 @@ def generate_username(pathname, user_fname, user_mname, user_lname):
             sql = """SELECT user_username
                 FROM userblock.RegisteredUser
                 WHERE user_username LIKE %s;"""
+            # Problem! Inputting "Corazon Aquino" generates "caquino1" even though the existing row in userblock.RegisteredUser
+            # contains "Maria Corazon Aquino" with username "mcaquino" (i.e. dapat "caquino" lang lalabas)
             values = [f"%{user_username.lower()}%"]
             cols = ['user_username']
             df = db.querydatafromdatabase(sql, values, cols)
@@ -882,7 +884,7 @@ layout = html.Div(
                         ),
                         dbc.ModalFooter(
                             dbc.Button(
-                                "Register", color = 'primary', id = 'login_loginbtn'
+                                "Register", color = 'primary', id = 'register_btn'
                             )
                         )
                     ]

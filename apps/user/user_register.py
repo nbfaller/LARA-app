@@ -6,7 +6,6 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy
-#import dash_ag_grid as dag
 
 from apps import commonmodules as cm
 from app import app
@@ -47,6 +46,29 @@ def register_populateusertypes(pathname):
         return [user_types, user_assignedsex]
     else:
         raise PreventUpdate
+
+# Callback for populating access type dropdown menu
+@app.callback(
+    [
+        Output('accesstype_id', 'options')
+    ],
+    [
+        Input('url', 'pathname')
+    ]
+)
+
+def register_populateaccesstypes(pathname):
+    if pathname == '/user/register':
+        sql = """SELECT accesstype_name as label, accesstype_id as value
+        FROM userblock.accesstype
+        """
+        values = []
+        cols = ['label', 'value']
+        df = db.querydatafromdatabase(sql, values, cols)
+        
+        accesstypes = df.to_dict('records')
+        return [accesstypes]
+    else: raise PreventUpdate
 
 # Callback for populating college dropdown menu
 @app.callback(
@@ -143,15 +165,19 @@ def register_showspecificforms(pathname, user_type):
                     dbc.Col(
                         dcc.Dropdown(
                             id = 'college_id'
-                        ), width = 3
-                    ),
-                    dbc.Label("Degree Program", width = 3),
+                        ), width = 9
+                    )
+                ], className = 'mb-3'
+            ),
+            dbc.Row(
+                [
+                    dbc.Label("Degree Program", width = 2),
                     dbc.Col(
                         dcc.Dropdown(
                             id = 'degree_id'
-                        ), width = 3
+                        ), width = 9
                     ),
-                ]
+                ], className = 'mb-3'
             ),
             dbc.Row(
                 [
@@ -164,7 +190,31 @@ def register_showspecificforms(pathname, user_type):
                         ),
                         width = 3
                     )
-                ]
+                ], className = 'mb-3'
+            ),
+            dbc.Row(
+                [
+                    dbc.Label("Access type", width = 2),
+                    dbc.Col(
+                        dcc.Dropdown(
+                            id = 'accesstype_id',
+                            value = 1,
+                            disabled = True
+                        ), width = 3
+                    ),
+                    dbc.Label("Student ID No.", width = 3),
+                    dbc.Col(
+                        dbc.Input(
+                            type = 'text',
+                            id = 'student_id',
+                            placeholder = 'Enter ID number',
+                            disabled = True
+                        ),
+                        width = 3
+                    )
+                ],
+                id = 'studentid_block',
+                style = {'display' : 'none'}
             )
         ]
         form_faculty = [
@@ -186,6 +236,33 @@ def register_showspecificforms(pathname, user_type):
                             placeholder = 'e.g. Instructor I, Professor II'
                         ),
                         width = 3
+                    )
+                ], className = 'mb-3'
+            ),
+            dbc.Row(
+                [
+                    dbc.Label("Access type", width = 2),
+                    dbc.Col(
+                        dcc.Dropdown(
+                            id = 'accesstype_id',
+                            value = 1
+                        ), width = 3
+                    ),
+                    html.Div(
+                        [
+                            dbc.Label("Faculty ID No.", width = 3),
+                            dbc.Col(
+                                dbc.Input(
+                                    type = 'text',
+                                    id = 'faculty_id',
+                                    placeholder = 'Enter ID number',
+                                    disabled = True
+                                ),
+                                width = 3
+                            )
+                        ],
+                        id = 'facultyid_block',
+                        style = {'display' : 'none'}
                     )
                 ]
             )
@@ -210,7 +287,34 @@ def register_showspecificforms(pathname, user_type):
                         ),
                         width = 3
                     )
-                ]
+                ], className = 'mb-3'
+            ),
+            dbc.Row(
+                [
+                    dbc.Label("Access type", width = 2),
+                    dbc.Col(
+                        dcc.Dropdown(
+                            id = 'accesstype_id',
+                            value = 1,
+                        ), width = 3
+                    ),
+                    html.Div(
+                        [
+                            dbc.Label("Staff ID No.", width = 3),
+                            dbc.Col(
+                                dbc.Input(
+                                    type = 'text',
+                                    id = 'staff_id',
+                                    placeholder = 'Enter ID number',
+                                    disabled = True
+                                ),
+                                width = 3
+                            )
+                        ],
+                        id = 'staffid_block',
+                        style = {'display' : 'none'}
+                    )
+                ],
             )
         ]
         if user_type == None:
@@ -223,6 +327,57 @@ def register_showspecificforms(pathname, user_type):
             return form_staff, 'Employee No.'
         else: raise PreventUpdate
     else: raise PreventUpdate
+
+# Callback for setting student_id equal to user_id
+@app.callback(
+    [
+        Output('student_id', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('user_id', 'value')
+    ]
+)
+
+def set_studentid(pathname, user_id):
+    if pathname == '/user/register':
+        if user_id: return [user_id]
+        else: return [None]
+    raise PreventUpdate
+
+# Callback for setting faculty_id equal to user_id
+@app.callback(
+    [
+        Output('faculty_id', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('user_id', 'value')
+    ]
+)
+
+def set_facultyid(pathname, user_id):
+    if pathname == '/user/register':
+        if user_id: return [user_id]
+        else: return [None]
+    raise PreventUpdate
+
+# Callback for setting staff_id equal to user_id
+@app.callback(
+    [
+        Output('staff_id', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('user_id', 'value')
+    ]
+)
+
+def set_staffid(pathname, user_id):
+    if pathname == '/user/register':
+        if user_id: return [user_id]
+        else: return [None]
+    raise PreventUpdate
 
 # Callback for populating regions
 @app.callback(
@@ -253,7 +408,8 @@ def register_populateregions(pathname):
 # Callback for showing present province dropdown once present region is selected
 @app.callback(
         [
-            Output('present_province', 'children')
+            Output('present_province', 'children'),
+            Output('present_province', 'className')
         ],
         [
             Input('url', 'pathname'),
@@ -267,19 +423,20 @@ def show_presentprovinces(pathname, present_region_id):
         dbc.Col(
             dcc.Dropdown(
                 id = 'present_province_id',
-            ), width = 6
+            ), width = 9
         )
     ]
     if pathname == '/user/register':
         if present_region_id:
-            return [dropdown_present_province]
-        else: return [None]
+            return [dropdown_present_province, 'mb-3']
+        else: return [None, None]
     else: raise PreventUpdate
 
 # Callback for showing permanent province dropdown once permanent region is selected
 @app.callback(
         [
-            Output('permanent_province', 'children')
+            Output('permanent_province', 'children'),
+            Output('permanent_province', 'className')
         ],
         [
             Input('url', 'pathname'),
@@ -292,14 +449,14 @@ def show_permanentprovinces(pathname, permanent_region_id):
         dbc.Label("Province", width = 2),
         dbc.Col(
             dcc.Dropdown(
-                id = 'permanent_province_id',
-            ), width = 6
+                id = 'permanent_province_id'
+            ), width = 9
         )
     ]
     if pathname == '/user/register':
         if permanent_region_id:
-            return [dropdown_permanent_province]
-        else: return [None]
+            return [dropdown_permanent_province, 'mb-3']
+        else: return [None, None]
     else: raise PreventUpdate
 
 # Callback for populating present province dropdown
@@ -358,10 +515,33 @@ def populate_permanentprovinces(pathname, permanent_region_id):
         else: raise PreventUpdate
     else: raise PreventUpdate
 
+# Callback for disabling permanent province dropdown if "Same as present address" is selected
+@app.callback(
+    [
+        Output('permanent_province_id', 'disabled'),
+        Output('permanent_province_id', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('present_permanent_address', 'value'),
+        Input('present_region_id', 'value'),
+        Input('present_province_id', 'value')
+    ]
+)
+
+def same_addresses_province (pathname, present_permanent_address, region_id, province_id):
+    if pathname == '/user/register':
+        if present_permanent_address and region_id:
+            return [True, province_id]
+        else:
+            return [False, None]
+    else: raise PreventUpdate
+
 # Callback for showing present citymun dropdown once present province and region is selected
 @app.callback(
         [
-            Output('present_citymun', 'children')
+            Output('present_citymun', 'children'),
+            Output('present_citymun', 'className')
         ],
         [
             Input('url', 'pathname'),
@@ -376,19 +556,20 @@ def show_presentcitymun(pathname, present_region_id, present_province_id):
         dbc.Col(
             dcc.Dropdown(
                 id = 'present_citymun_id',
-            ), width = 6
+            ), width = 9
         )
     ]
     if pathname == '/user/register':
         if present_region_id and present_province_id:
-            return [dropdown_present_citymun]
-        else: return [None]
+            return [dropdown_present_citymun, 'mb-3']
+        else: return [None, None]
     else: raise PreventUpdate
 
 # Callback for showing permanent citymun dropdown once permanent province and region is selected
 @app.callback(
         [
-            Output('permanent_citymun', 'children')
+            Output('permanent_citymun', 'children'),
+            Output('permanent_citymun', 'className')
         ],
         [
             Input('url', 'pathname'),
@@ -403,13 +584,13 @@ def show_permanentcitymun(pathname, permanent_region_id, permanent_province_id):
         dbc.Col(
             dcc.Dropdown(
                 id = 'permanent_citymun_id',
-            ), width = 6
+            ), width = 9
         )
     ]
     if pathname == '/user/register':
         if permanent_region_id and permanent_province_id:
-            return [dropdown_permanent_citymun]
-        else: return [None]
+            return [dropdown_permanent_citymun, 'mb-3']
+        else: return [None, None]
     else: raise PreventUpdate
 
 # Callback for populating present citymun dropdown
@@ -470,10 +651,34 @@ def populate_permanentcitymun(pathname, permanent_region_id, permanent_province_
         else: raise PreventUpdate
     else: raise PreventUpdate
 
+# Callback for disabling permanent citymun dropdown if "Same as present address" is selected
+@app.callback(
+    [
+        Output('permanent_citymun_id', 'disabled'),
+        Output('permanent_citymun_id', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('present_permanent_address', 'value'),
+        Input('present_region_id', 'value'),
+        Input('present_province_id', 'value'),
+        Input('present_citymun_id', 'value')
+    ]
+)
+
+def same_addresses_citymun (pathname, present_permanent_address, region_id, province_id, citymun_id):
+    if pathname == '/user/register':
+        if present_permanent_address and region_id and province_id:
+            return [True, citymun_id]
+        else:
+            return [False, None]
+    else: raise PreventUpdate
+
 # Callback for showing present barangay dropdown once present province, region, and citymun is selected
 @app.callback(
         [
-            Output('present_barangay', 'children')
+            Output('present_barangay', 'children'),
+            Output('present_barangay', 'className')
         ],
         [
             Input('url', 'pathname'),
@@ -489,19 +694,20 @@ def show_presentbrgy(pathname, present_region_id, present_province_id, present_c
         dbc.Col(
             dcc.Dropdown(
                 id = 'present_brgy_id',
-            ), width = 6
+            ), width = 9
         )
     ]
     if pathname == '/user/register':
         if present_region_id and present_province_id and present_citymun_id:
-            return [dropdown_present_barangay]
-        else: return [None]
+            return [dropdown_present_barangay, 'mb-3']
+        else: return [None, None]
     else: raise PreventUpdate
 
 # Callback for showing permanent barangay dropdown once permanent province, region, and citymun is selected
 @app.callback(
         [
-            Output('permanent_barangay', 'children')
+            Output('permanent_barangay', 'children'),
+            Output('permanent_barangay', 'className')
         ],
         [
             Input('url', 'pathname'),
@@ -517,13 +723,13 @@ def show_permanentbrgy(pathname, permanent_region_id, permanent_province_id, per
         dbc.Col(
             dcc.Dropdown(
                 id = 'permanent_brgy_id',
-            ), width = 6
+            ), width = 9
         )
     ]
     if pathname == '/user/register':
         if permanent_region_id and permanent_province_id and permanent_citymun_id:
-            return [dropdown_permanent_barangay]
-        else: return [None]
+            return [dropdown_permanent_barangay, 'mb-3']
+        else: return [None, None]
     else: raise PreventUpdate
 
 # Callback for populating present barangay dropdown
@@ -586,10 +792,35 @@ def populate_permanentbrgy(pathname, permanent_region_id, permanent_province_id,
         else: raise PreventUpdate
     else: raise PreventUpdate
 
+# Callback for disabling permanent barangay dropdown if "Same as present address" is selected
+@app.callback(
+    [
+        Output('permanent_brgy_id', 'disabled'),
+        Output('permanent_brgy_id', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('present_permanent_address', 'value'),
+        Input('present_region_id', 'value'),
+        Input('present_province_id', 'value'),
+        Input('present_citymun_id', 'value'),
+        Input('present_brgy_id', 'value')
+    ]
+)
+
+def same_addresses_barangay (pathname, present_permanent_address, region_id, province_id, citymun_id, brgy_id):
+    if pathname == '/user/register':
+        if present_permanent_address and region_id and province_id and citymun_id:
+            return [True, brgy_id]
+        else:
+            return [False, None]
+    else: raise PreventUpdate
+
 # Callback for showing present street address input once permanent province, region, citymun, and barangay is selected
 @app.callback(
         [
-            Output('present_street_input', 'children')
+            Output('present_street_input', 'children'),
+            Output('present_street_input', 'className')
         ],
         [
             Input('url', 'pathname'),
@@ -606,19 +837,20 @@ def show_presentstreet(pathname, present_region_id, present_province_id, present
         dbc.Col(
             dbc.Input(
                 id = 'present_street',
-            ), width = 6
+            ), width = 9
         )
     ]
     if pathname == '/user/register':
         if present_region_id and present_province_id and present_citymun_id and present_brgy_id:
-            return [input_present_street]
-        else: return [None]
+            return [input_present_street, 'mb-3']
+        else: return [None, None]
     else: raise PreventUpdate
 
 # Callback for showing permanent street address input once permanent province, region, citymun, and barangay is selected
 @app.callback(
         [
-            Output('permanent_street_input', 'children')
+            Output('permanent_street_input', 'children'),
+            Output('permanent_street_input', 'className')
         ],
         [
             Input('url', 'pathname'),
@@ -635,13 +867,38 @@ def show_permanentstreet(pathname, permanent_region_id, permanent_prov_id, perma
         dbc.Col(
             dbc.Input(
                 id = 'permanent_street',
-            ), width = 6
+            ), width = 9
         )
     ]
     if pathname == '/user/register':
         if permanent_region_id and permanent_prov_id and permanent_citymun_id and permanent_brgy_id:
-            return [input_permanent_street]
-        else: return [None]
+            return [input_permanent_street, 'mb-3']
+        else: return [None, None]
+    else: raise PreventUpdate
+
+# Callback for disabling permanent street address input if "Same as present address" is selected
+@app.callback(
+    [
+        Output('permanent_street', 'disabled'),
+        Output('permanent_street', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('present_permanent_address', 'value'),
+        Input('present_region_id', 'value'),
+        Input('present_province_id', 'value'),
+        Input('present_citymun_id', 'value'),
+        Input('present_brgy_id', 'value'),
+        Input('present_street', 'value')
+    ]
+)
+
+def same_addresses_street (pathname, present_permanent_address, region_id, province_id, citymun_id, brgy_id, street):
+    if pathname == '/user/register':
+        if present_permanent_address and region_id and province_id and citymun_id and brgy_id:
+            return [True, street]
+        else:
+            return [False, None]
     else: raise PreventUpdate
 
 # Callback for automatically generating username and checking existing list of usernames
@@ -669,11 +926,12 @@ def generate_username(pathname, user_fname, user_mname, user_lname):
             sql = """SELECT user_username
                 FROM userblock.RegisteredUser
                 WHERE user_username LIKE %s;"""
-            # Problem! Inputting "Corazon Aquino" generates "caquino1" even though the existing row in userblock.RegisteredUser
-            # contains "Maria Corazon Aquino" with username "mcaquino" (i.e. dapat "caquino" lang lalabas)
             values = [f"%{user_username.lower()}%"]
             cols = ['user_username']
             df = db.querydatafromdatabase(sql, values, cols)
+            #print(df)
+            df = df[df['user_username'] == user_username.lower()]
+            #print(df)
             
             if not df.empty:
                 lastchar = df.tail().values[0][0][-1]
@@ -685,6 +943,27 @@ def generate_username(pathname, user_fname, user_mname, user_lname):
                 return [user_username.lower()]
 
         return [None]
+    else: raise PreventUpdate
+
+# Callback for disabling permanent region dropdown if "Same as present address" is selected
+@app.callback(
+    [
+        Output('permanent_region_id', 'disabled'),
+        Output('permanent_region_id', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('present_permanent_address', 'value'),
+        Input('present_region_id', 'value')
+    ]
+)
+
+def same_addresses_region (pathname, present_permanent_address, region_id):
+    if pathname == '/user/register':
+        if present_permanent_address:
+            return [True, region_id]
+        else:
+            return [False, None]
     else: raise PreventUpdate
 
 layout = html.Div(
@@ -792,7 +1071,7 @@ layout = html.Div(
                                                         placeholder = 'example@nwssu.edu.ph'
                                                     ), width = 3
                                                 )
-                                            ]
+                                            ], className = 'mb-3'
                                         ),
                                         html.Hr(),
                                     ], id = 'basic_information'
@@ -806,9 +1085,9 @@ layout = html.Div(
                                                 dbc.Col(
                                                     dcc.Dropdown(
                                                         id = 'present_region_id'
-                                                    ), width = 6
+                                                    ), width = 9
                                                 )
-                                            ]
+                                            ], className = 'mb-3'
                                         ),
                                         dbc.Row(id = 'present_province'),
                                         dbc.Row(id = 'present_citymun'),
@@ -821,15 +1100,20 @@ layout = html.Div(
                                 html.Div(
                                     [
                                         html.H3("Permanent Address"),
+                                        dbc.Switch(
+                                            label = 'Same as present address',
+                                            value = False,
+                                            id = 'present_permanent_address',
+                                        ),
                                         dbc.Row(
                                             [
                                                 dbc.Label("Region", width = 2),
                                                 dbc.Col(
                                                     dcc.Dropdown(
                                                         id = 'permanent_region_id'
-                                                    ), width = 6
+                                                    ), width = 9
                                                 )
-                                            ]
+                                            ], className = 'mb-3'
                                         ),
                                         dbc.Row(id = 'permanent_province'),
                                         dbc.Row(id = 'permanent_citymun'),
@@ -837,7 +1121,7 @@ layout = html.Div(
                                         dbc.Row(id = 'permanent_street_input'),
                                         html.Hr(),
                                     ], 
-                                    id = 'present_address'
+                                    id = 'permanent_address'
                                 ),
                                 html.Div(
                                     [
@@ -851,12 +1135,8 @@ layout = html.Div(
                                                         id = 'user_pronouns',
                                                         placeholder = 'E.g. they/them, she/her, he/him'
                                                     ), width = 3
-                                                )
-                                            ], className = 'mb-3'
-                                        ),
-                                        dbc.Row(
-                                            [
-                                                dbc.Label("Preferred honorific", width = 2),
+                                                ),
+                                                dbc.Label("Preferred honorific", width = 3),
                                                 dbc.Col(
                                                     dbc.Input(
                                                         type = 'text',
@@ -874,7 +1154,7 @@ layout = html.Div(
                                                         type = 'text',
                                                         id = 'user_livedname',
                                                         placeholder = 'Enter lived name'
-                                                    ), width = 3
+                                                    ), width = 9
                                                 )
                                             ], className = 'mb-3'
                                         ),

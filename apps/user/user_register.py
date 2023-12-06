@@ -515,28 +515,6 @@ def populate_permanentprovinces(pathname, permanent_region_id):
         else: raise PreventUpdate
     else: raise PreventUpdate
 
-# Callback for disabling permanent province dropdown if "Same as present address" is selected
-@app.callback(
-    [
-        Output('permanent_province_id', 'disabled'),
-        Output('permanent_province_id', 'value')
-    ],
-    [
-        Input('url', 'pathname'),
-        Input('present_permanent_address', 'value'),
-        Input('present_region_id', 'value'),
-        Input('present_province_id', 'value')
-    ]
-)
-
-def same_addresses_province (pathname, present_permanent_address, region_id, province_id):
-    if pathname == '/user/register':
-        if present_permanent_address and region_id:
-            return [True, province_id]
-        else:
-            return [False, None]
-    else: raise PreventUpdate
-
 # Callback for showing present citymun dropdown once present province and region is selected
 @app.callback(
         [
@@ -649,29 +627,6 @@ def populate_permanentcitymun(pathname, permanent_region_id, permanent_province_
 
             return [df.to_dict('records')]
         else: raise PreventUpdate
-    else: raise PreventUpdate
-
-# Callback for disabling permanent citymun dropdown if "Same as present address" is selected
-@app.callback(
-    [
-        Output('permanent_citymun_id', 'disabled'),
-        Output('permanent_citymun_id', 'value')
-    ],
-    [
-        Input('url', 'pathname'),
-        Input('present_permanent_address', 'value'),
-        Input('present_region_id', 'value'),
-        Input('present_province_id', 'value'),
-        Input('present_citymun_id', 'value')
-    ]
-)
-
-def same_addresses_citymun (pathname, present_permanent_address, region_id, province_id, citymun_id):
-    if pathname == '/user/register':
-        if present_permanent_address and region_id and province_id:
-            return [True, citymun_id]
-        else:
-            return [False, None]
     else: raise PreventUpdate
 
 # Callback for showing present barangay dropdown once present province, region, and citymun is selected
@@ -792,30 +747,6 @@ def populate_permanentbrgy(pathname, permanent_region_id, permanent_province_id,
         else: raise PreventUpdate
     else: raise PreventUpdate
 
-# Callback for disabling permanent barangay dropdown if "Same as present address" is selected
-@app.callback(
-    [
-        Output('permanent_brgy_id', 'disabled'),
-        Output('permanent_brgy_id', 'value')
-    ],
-    [
-        Input('url', 'pathname'),
-        Input('present_permanent_address', 'value'),
-        Input('present_region_id', 'value'),
-        Input('present_province_id', 'value'),
-        Input('present_citymun_id', 'value'),
-        Input('present_brgy_id', 'value')
-    ]
-)
-
-def same_addresses_barangay (pathname, present_permanent_address, region_id, province_id, citymun_id, brgy_id):
-    if pathname == '/user/register':
-        if present_permanent_address and region_id and province_id and citymun_id:
-            return [True, brgy_id]
-        else:
-            return [False, None]
-    else: raise PreventUpdate
-
 # Callback for showing present street address input once permanent province, region, citymun, and barangay is selected
 @app.callback(
         [
@@ -876,31 +807,6 @@ def show_permanentstreet(pathname, permanent_region_id, permanent_prov_id, perma
         else: return [None, None]
     else: raise PreventUpdate
 
-# Callback for disabling permanent street address input if "Same as present address" is selected
-@app.callback(
-    [
-        Output('permanent_street', 'disabled'),
-        Output('permanent_street', 'value')
-    ],
-    [
-        Input('url', 'pathname'),
-        Input('present_permanent_address', 'value'),
-        Input('present_region_id', 'value'),
-        Input('present_province_id', 'value'),
-        Input('present_citymun_id', 'value'),
-        Input('present_brgy_id', 'value'),
-        Input('present_street', 'value')
-    ]
-)
-
-def same_addresses_street (pathname, present_permanent_address, region_id, province_id, citymun_id, brgy_id, street):
-    if pathname == '/user/register':
-        if present_permanent_address and region_id and province_id and citymun_id and brgy_id:
-            return [True, street]
-        else:
-            return [False, None]
-    else: raise PreventUpdate
-
 # Callback for automatically generating username and checking existing list of usernames
 @app.callback(
     [
@@ -945,26 +851,70 @@ def generate_username(pathname, user_fname, user_mname, user_lname):
         return [None]
     else: raise PreventUpdate
 
-# Callback for disabling permanent region dropdown if "Same as present address" is selected
-@app.callback(
+"""@app.callback(
     [
-        Output('permanent_region_id', 'disabled'),
-        Output('permanent_region_id', 'value')
+        Output('register_confirmationmodal', 'is_open'),
+        Output('register_confirmationmodal', 'children')
     ],
     [
-        Input('url', 'pathname'),
-        Input('present_permanent_address', 'value'),
-        Input('present_region_id', 'value')
+        Input('register_btn', 'n_clicks')
+    ],
+    [
+        # Basic information
+        State('user_id', 'value'),
+        State('user_type', 'value'),
+        State('user_lname', 'value'),
+        State('user_fname', 'value'),
+        State('user_mname', 'value'),
+        State('user_username', 'value'),
+        State('user_birthdate', 'value'),
+        State('user_assignedsex', 'value'),
+        # Contact details
+        State('user_email', 'value'),
+        State('user_contactnum', 'value'),
+        # Present address
+        State('present_region_id', 'value'),
+        State('present_province_id', 'value'),
+        State('present_citymun_id', 'value'),
+        State('present_brgy_id', 'value'),
+        State('present_street', 'value'),
+        # Permanent address
+        State('permanent_region_id', 'value'),
+        State('permanent_province_id', 'value'),
+        State('permanent_citymun_id', 'value'),
+        State('permanent_brgy_id', 'value'),
+        State('permanent_street', 'value'),
+        # Optional information
+        State('user_pronouns', 'value'),
+        State('user_honorific', 'value'),
+        State('user_livedname', 'value'),
+        # Student information
+        State('student_id', 'value'),
+        State('student_year', 'value'),
+        State('degree_id', 'value'),
+        # Student and faculty information
+        State('college_id', 'value'),
+        # Faculty information
+        State('faculty_id', 'value'),
+        State('faculty_desig', 'value'),
+        # Staff information
+        State('staff_id', 'value'),
+        State('staff_desig', 'value'),
+        State('office_id', 'value'),
     ]
 )
 
-def same_addresses_region (pathname, present_permanent_address, region_id):
-    if pathname == '/user/register':
-        if present_permanent_address:
-            return [True, region_id]
-        else:
-            return [False, None]
-    else: raise PreventUpdate
+def confirmation(btn, user_id, user_type, lname, fname, mname,
+                 username, birthdate, assignedsex, email, contactnum,
+                 present_region, present_province, present_citymun, present_brgy, present_street,
+                 permanent_region, permanent_province, permanent_citymun, permanent_brgy, permanent_street,
+                 pronouns, honorific, livedname, student_id, student_year, degree, college,
+                 faculty_id, faculty_desig, staff_id, staff_desig, office):
+    ctx = dash.callback_context
+    if ctx.triggered:
+        eventid = ctx.triggered[0]['prop_id'].split('.')[0]
+        if eventid == 'register_btn' and btn:"""
+            
 
 layout = html.Div(
     [
@@ -1026,7 +976,7 @@ layout = html.Div(
                                         ),
                                         dbc.Row(
                                             [
-                                                dbc.Label("Username", width = 2),
+                                                dbc.Label("Username", width = 2, id = 'user_username_label'),
                                                 dbc.Col(
                                                     dbc.Input(
                                                         type = 'text',
@@ -1034,6 +984,10 @@ layout = html.Div(
                                                         placeholder = 'Username',
                                                         disabled = True,
                                                     ), width = 9
+                                                ),
+                                                dbc.Tooltip(
+                                                    """Usernames are generated automatically.""",
+                                                    target = 'user_username_label'
                                                 )
                                             ], className = 'mb-3'
                                         ),
@@ -1063,13 +1017,17 @@ layout = html.Div(
                                                         placeholder = '09XXXXXXXXX'
                                                     ), width = 3
                                                 ),
-                                                dbc.Label ("Email address", width = 3),
+                                                dbc.Label ("Email address", width = 3, id = 'user_email_label'),
                                                 dbc.Col(
                                                     dbc.Input(
                                                         type = 'text',
                                                         id = 'user_email',
                                                         placeholder = 'example@nwssu.edu.ph'
                                                     ), width = 3
+                                                ),
+                                                dbc.Tooltip(
+                                                    """You are encouraged to input your NwSSU email address.""",
+                                                    target = 'user_email_label'
                                                 )
                                             ], className = 'mb-3'
                                         ),
@@ -1100,11 +1058,6 @@ layout = html.Div(
                                 html.Div(
                                     [
                                         html.H3("Permanent Address"),
-                                        dbc.Switch(
-                                            label = 'Same as present address',
-                                            value = False,
-                                            id = 'present_permanent_address',
-                                        ),
                                         dbc.Row(
                                             [
                                                 dbc.Label("Region", width = 2),
@@ -1148,13 +1101,18 @@ layout = html.Div(
                                         ),
                                         dbc.Row(
                                             [
-                                                dbc.Label("Lived name", width = 2),
+                                                dbc.Label("Lived name", width = 2, id = 'user_livedname_label'),
                                                 dbc.Col(
                                                     dbc.Input(
                                                         type = 'text',
                                                         id = 'user_livedname',
                                                         placeholder = 'Enter lived name'
                                                     ), width = 9
+                                                ),
+                                                dbc.Tooltip(
+                                                    """Per Memorandum No. OVCAA-MTTP 21-029 of the Vice Chancellor for Academic Affairs of UP Diliman, a
+                                                    lived name is a name that affirms one's gender identity and/or expression (GIE).""",
+                                                    target = 'user_livedname_label'
                                                 )
                                             ], className = 'mb-3'
                                         ),
@@ -1186,7 +1144,7 @@ layout = html.Div(
                 )
             ],
             centered = True,
-            id = 'register_confirmation',
+            id = 'register_confirmationmodal',
             backdrop = 'static'
         )
     ]

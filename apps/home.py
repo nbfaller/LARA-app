@@ -69,11 +69,14 @@ layout = html.Div(
         html.Div(
             [
                 html.H1(
-                    ["Your books, now at the", html.Br(),"reach of your fingertips."],
+                    ["""Your books, now at the reach of your fingertips."""],
                     style = {
+                        'max-width' : '16em',
+                        #'font-size' : '40px',
                         'position' : 'absolute',
                         'bottom' : '2em',
-                        'left' : '2em',
+                        'padding-left' : '2em',
+                        'padding-right' : '2em',
                         'z-index' : '2',
                         'color' : '#f5f5f5',
                     }

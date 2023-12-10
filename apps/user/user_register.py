@@ -35,7 +35,7 @@ def register_populateusertypes(pathname):
         user_types = df1.to_dict('records')
 
         sql2 = """
-        SELECT assignedsex_name as label, assignedsex_code as value
+        SELECT assignedsex_name as label, assignedsex_id as value
         FROM userblock.assignedsex;
         """
         values2 = []
@@ -50,7 +50,9 @@ def register_populateusertypes(pathname):
 # Callback for populating access type dropdown menu
 @app.callback(
     [
-        Output('accesstype_id', 'options')
+        Output('student_accesstype_id', 'options'),
+        Output('faculty_accesstype_id', 'options'),
+        Output('staff_accesstype_id', 'options')
     ],
     [
         Input('url', 'pathname')
@@ -67,13 +69,14 @@ def register_populateaccesstypes(pathname):
         df = db.querydatafromdatabase(sql, values, cols)
         
         accesstypes = df.to_dict('records')
-        return [accesstypes]
+        return [accesstypes, accesstypes, accesstypes]
     else: raise PreventUpdate
 
 # Callback for populating college dropdown menu
 @app.callback(
     [
-        Output('college_id', 'options')
+        Output('student_college_id', 'options'),
+        Output('faculty_college_id', 'options')
     ],
     [
         Input('url', 'pathname')
@@ -90,33 +93,55 @@ def register_populatecolleges(pathname):
         df = db.querydatafromdatabase(sql, values, cols)
         
         colleges = df.to_dict('records')
-        return [colleges]
+        return [colleges, colleges]
     else: raise PreventUpdate
 
 # Callback for populating degree program dropdown menu
 @app.callback(
     [
+        #Output('degree_id', 'disabled'),
         Output('degree_id', 'options')
     ],
     [
         Input('url', 'pathname'),
-        Input('college_id', 'value')
+        Input('student_college_id', 'value')
     ]
 )
 
-def register_populatedegrees(pathname, college_id):
+def register_populatedegrees(pathname, student_college_id):
     if pathname == '/user/register':
-        if college_id:
+        if student_college_id:
             sql = """SELECT degree_name as label, degree_id as value
-            FROM userblock.degreeprogram WHERE college_id = 
-            """ + str(college_id)
+            FROM userblock.degreeprogram WHERE college_id = %s;
+            """ % student_college_id
             values = []
             cols = ['label', 'value']
             df = db.querydatafromdatabase(sql, values, cols)
-            
             degrees = df.to_dict('records')
             return [degrees]
-        else: raise PreventUpdate
+        else: return [None]
+    else: raise PreventUpdate
+
+# Callback for populating year level dropdown menu
+@app.callback(
+    [
+        Output('year_id', 'options')
+    ],
+    [
+        Input('url', 'pathname')
+    ]
+)
+
+def register_populateyearlevels(pathname):
+    if pathname == '/user/register':
+        sql = """SELECT year_level as label, year_id as value
+        FROM userblock.yearlevel"""
+        values = []
+        cols = ['label', 'value']
+        df = db.querydatafromdatabase(sql, values, cols)
+            
+        year_levels = df.to_dict('records')
+        return [year_levels]
     else: raise PreventUpdate
 
 # Callback for populating office dropdown menu
@@ -145,7 +170,9 @@ def register_populateoffices(pathname):
 # Callback for showing user type-specific sections of the registration page
 @app.callback(
         [
-            Output('userspecific_form', 'children'),
+            Output('student_form', 'style'),
+            Output('faculty_form', 'style'),
+            Output('staff_form', 'style'),
             Output('user_id_label', 'children')
         ],
         [
@@ -156,175 +183,14 @@ def register_populateoffices(pathname):
 
 def register_showspecificforms(pathname, user_type):
     if pathname == '/user/register':
-        form_student = [
-            #html.Hr(),
-            #html.H3("Student Information"),
-            dbc.Row(
-                [
-                    dbc.Label("College", width = 2),
-                    dbc.Col(
-                        dcc.Dropdown(
-                            id = 'college_id'
-                        ), width = 9
-                    )
-                ], className = 'mb-3'
-            ),
-            dbc.Row(
-                [
-                    dbc.Label("Degree Program", width = 2),
-                    dbc.Col(
-                        dcc.Dropdown(
-                            id = 'degree_id'
-                        ), width = 9
-                    ),
-                ], className = 'mb-3'
-            ),
-            dbc.Row(
-                [
-                    dbc.Label("Year level", width = 2),
-                    dbc.Col(
-                        dbc.Input(
-                            type = 'text',
-                            id = 'student_year',
-                            placeholder = 'Year level'
-                        ),
-                        width = 3
-                    )
-                ], className = 'mb-3'
-            ),
-            dbc.Row(
-                [
-                    dbc.Label("Access type", width = 2),
-                    dbc.Col(
-                        dcc.Dropdown(
-                            id = 'accesstype_id',
-                            value = 1,
-                            disabled = True
-                        ), width = 3
-                    ),
-                    dbc.Label("Student ID No.", width = 3),
-                    dbc.Col(
-                        dbc.Input(
-                            type = 'text',
-                            id = 'student_id',
-                            placeholder = 'Enter ID number',
-                            disabled = True
-                        ),
-                        width = 3
-                    )
-                ],
-                id = 'studentid_block',
-                style = {'display' : 'none'}
-            )
-        ]
-        form_faculty = [
-            #html.Hr(),
-            #html.H3("Faculty Information"),
-            dbc.Row(
-                [
-                    dbc.Label("College", width = 2),
-                    dbc.Col(
-                        dcc.Dropdown(
-                            id = 'college_id'
-                        ), width = 3
-                    ),
-                    dbc.Label("Designation", width = 3),
-                    dbc.Col(
-                        dbc.Input(
-                            type = 'text',
-                            id = 'faculty_desig',
-                            placeholder = 'e.g. Instructor I, Professor II'
-                        ),
-                        width = 3
-                    )
-                ], className = 'mb-3'
-            ),
-            dbc.Row(
-                [
-                    dbc.Label("Access type", width = 2),
-                    dbc.Col(
-                        dcc.Dropdown(
-                            id = 'accesstype_id',
-                            value = 1
-                        ), width = 3
-                    ),
-                    html.Div(
-                        [
-                            dbc.Label("Faculty ID No.", width = 3),
-                            dbc.Col(
-                                dbc.Input(
-                                    type = 'text',
-                                    id = 'faculty_id',
-                                    placeholder = 'Enter ID number',
-                                    disabled = True
-                                ),
-                                width = 3
-                            )
-                        ],
-                        id = 'facultyid_block',
-                        style = {'display' : 'none'}
-                    )
-                ]
-            )
-        ]
-        form_staff = [
-            #html.Hr(),
-            #html.H3("Staff Information"),
-            dbc.Row(
-                [
-                    dbc.Label("Office", width = 2),
-                    dbc.Col(
-                        dcc.Dropdown(
-                            id = 'office_id'
-                        ), width = 3
-                    ),
-                    dbc.Label("Designation", width = 3),
-                    dbc.Col(
-                        dbc.Input(
-                            type = 'text',
-                            id = 'staff_desig',
-                            placeholder = 'e.g. Registrar I, Librarian I'
-                        ),
-                        width = 3
-                    )
-                ], className = 'mb-3'
-            ),
-            dbc.Row(
-                [
-                    dbc.Label("Access type", width = 2),
-                    dbc.Col(
-                        dcc.Dropdown(
-                            id = 'accesstype_id',
-                            value = 1,
-                        ), width = 3
-                    ),
-                    html.Div(
-                        [
-                            dbc.Label("Staff ID No.", width = 3),
-                            dbc.Col(
-                                dbc.Input(
-                                    type = 'text',
-                                    id = 'staff_id',
-                                    placeholder = 'Enter ID number',
-                                    disabled = True
-                                ),
-                                width = 3
-                            )
-                        ],
-                        id = 'staffid_block',
-                        style = {'display' : 'none'}
-                    )
-                ],
-            )
-        ]
         if user_type == None:
-            return [None], 'ID No.'
+            return [{'display': 'none'}, {'display': 'none'}, {'display': 'none'}, 'ID No.']
         elif user_type == 1:
-            return form_student, 'Student No.'
+            return [{'display': 'block'}, {'display': 'none'}, {'display': 'none'}, 'Student No.']
         elif user_type == 2:
-            return form_faculty, 'Employee No.'
+            return [{'display': 'none'}, {'display': 'block'}, {'display': 'none'}, 'Employee No.']
         elif user_type == 3:
-            return form_staff, 'Employee No.'
+            return [{'display': 'none'}, {'display': 'none'}, {'display': 'block'}, 'Employee No.']
         else: raise PreventUpdate
     else: raise PreventUpdate
 
@@ -408,8 +274,8 @@ def register_populateregions(pathname):
 # Callback for showing present province dropdown once present region is selected
 @app.callback(
         [
-            Output('present_province', 'children'),
-            Output('present_province', 'className')
+            Output('present_province_id', 'disabled'),
+            Output('present_province_id', 'value')
         ],
         [
             Input('url', 'pathname'),
@@ -418,25 +284,17 @@ def register_populateregions(pathname):
 )
 
 def show_presentprovinces(pathname, present_region_id):
-    dropdown_present_province = [
-        dbc.Label("Province", width = 2),
-        dbc.Col(
-            dcc.Dropdown(
-                id = 'present_province_id',
-            ), width = 9
-        )
-    ]
     if pathname == '/user/register':
         if present_region_id:
-            return [dropdown_present_province, 'mb-3']
-        else: return [None, None]
+            return [False, None]
+        else: return [True, None]
     else: raise PreventUpdate
 
 # Callback for showing permanent province dropdown once permanent region is selected
 @app.callback(
         [
-            Output('permanent_province', 'children'),
-            Output('permanent_province', 'className')
+            Output('permanent_province_id', 'disabled'),
+            Output('permanent_province_id', 'value')
         ],
         [
             Input('url', 'pathname'),
@@ -445,18 +303,10 @@ def show_presentprovinces(pathname, present_region_id):
 )
 
 def show_permanentprovinces(pathname, permanent_region_id):
-    dropdown_permanent_province = [
-        dbc.Label("Province", width = 2),
-        dbc.Col(
-            dcc.Dropdown(
-                id = 'permanent_province_id'
-            ), width = 9
-        )
-    ]
     if pathname == '/user/register':
         if permanent_region_id:
-            return [dropdown_permanent_province, 'mb-3']
-        else: return [None, None]
+            return [False, None]
+        else: return [True, None]
     else: raise PreventUpdate
 
 # Callback for populating present province dropdown
@@ -518,8 +368,8 @@ def populate_permanentprovinces(pathname, permanent_region_id):
 # Callback for showing present citymun dropdown once present province and region is selected
 @app.callback(
         [
-            Output('present_citymun', 'children'),
-            Output('present_citymun', 'className')
+            Output('present_citymun_id', 'disabled'),
+            Output('present_citymun_id', 'value')
         ],
         [
             Input('url', 'pathname'),
@@ -529,25 +379,17 @@ def populate_permanentprovinces(pathname, permanent_region_id):
 )
 
 def show_presentcitymun(pathname, present_region_id, present_province_id):
-    dropdown_present_citymun = [
-        dbc.Label("City/Municipality", width = 2),
-        dbc.Col(
-            dcc.Dropdown(
-                id = 'present_citymun_id',
-            ), width = 9
-        )
-    ]
     if pathname == '/user/register':
         if present_region_id and present_province_id:
-            return [dropdown_present_citymun, 'mb-3']
-        else: return [None, None]
+            return [False, None]
+        else: return [True, None]
     else: raise PreventUpdate
 
 # Callback for showing permanent citymun dropdown once permanent province and region is selected
 @app.callback(
         [
-            Output('permanent_citymun', 'children'),
-            Output('permanent_citymun', 'className')
+            Output('permanent_citymun_id', 'disabled'),
+            Output('permanent_citymun_id', 'value')
         ],
         [
             Input('url', 'pathname'),
@@ -557,18 +399,10 @@ def show_presentcitymun(pathname, present_region_id, present_province_id):
 )
 
 def show_permanentcitymun(pathname, permanent_region_id, permanent_province_id):
-    dropdown_permanent_citymun = [
-        dbc.Label("City/Municipality", width = 2),
-        dbc.Col(
-            dcc.Dropdown(
-                id = 'permanent_citymun_id',
-            ), width = 9
-        )
-    ]
     if pathname == '/user/register':
         if permanent_region_id and permanent_province_id:
-            return [dropdown_permanent_citymun, 'mb-3']
-        else: return [None, None]
+            return [False, None]
+        else: return [True, None]
     else: raise PreventUpdate
 
 # Callback for populating present citymun dropdown
@@ -632,8 +466,8 @@ def populate_permanentcitymun(pathname, permanent_region_id, permanent_province_
 # Callback for showing present barangay dropdown once present province, region, and citymun is selected
 @app.callback(
         [
-            Output('present_barangay', 'children'),
-            Output('present_barangay', 'className')
+            Output('present_brgy_id', 'disabled'),
+            Output('present_brgy_id', 'value')
         ],
         [
             Input('url', 'pathname'),
@@ -644,25 +478,17 @@ def populate_permanentcitymun(pathname, permanent_region_id, permanent_province_
 )
 
 def show_presentbrgy(pathname, present_region_id, present_province_id, present_citymun_id):
-    dropdown_present_barangay = [
-        dbc.Label("Barangay", width = 2),
-        dbc.Col(
-            dcc.Dropdown(
-                id = 'present_brgy_id',
-            ), width = 9
-        )
-    ]
     if pathname == '/user/register':
         if present_region_id and present_province_id and present_citymun_id:
-            return [dropdown_present_barangay, 'mb-3']
-        else: return [None, None]
+            return [False, None]
+        else: return [True, None]
     else: raise PreventUpdate
 
 # Callback for showing permanent barangay dropdown once permanent province, region, and citymun is selected
 @app.callback(
         [
-            Output('permanent_barangay', 'children'),
-            Output('permanent_barangay', 'className')
+            Output('permanent_brgy_id', 'disabled'),
+            Output('permanent_brgy_id', 'value')
         ],
         [
             Input('url', 'pathname'),
@@ -673,18 +499,10 @@ def show_presentbrgy(pathname, present_region_id, present_province_id, present_c
 )
 
 def show_permanentbrgy(pathname, permanent_region_id, permanent_province_id, permanent_citymun_id):
-    dropdown_permanent_barangay = [
-        dbc.Label("Barangay", width = 2),
-        dbc.Col(
-            dcc.Dropdown(
-                id = 'permanent_brgy_id',
-            ), width = 9
-        )
-    ]
     if pathname == '/user/register':
         if permanent_region_id and permanent_province_id and permanent_citymun_id:
-            return [dropdown_permanent_barangay, 'mb-3']
-        else: return [None, None]
+            return [False, None]
+        else: return [True, None]
     else: raise PreventUpdate
 
 # Callback for populating present barangay dropdown
@@ -750,8 +568,8 @@ def populate_permanentbrgy(pathname, permanent_region_id, permanent_province_id,
 # Callback for showing present street address input once permanent province, region, citymun, and barangay is selected
 @app.callback(
         [
-            Output('present_street_input', 'children'),
-            Output('present_street_input', 'className')
+            Output('present_street', 'disabled'),
+            Output('present_street', 'value')
         ],
         [
             Input('url', 'pathname'),
@@ -763,25 +581,17 @@ def populate_permanentbrgy(pathname, permanent_region_id, permanent_province_id,
 )
 
 def show_presentstreet(pathname, present_region_id, present_province_id, present_citymun_id, present_brgy_id):
-    input_present_street = [
-        dbc.Label("Street address", width = 2),
-        dbc.Col(
-            dbc.Input(
-                id = 'present_street',
-            ), width = 9
-        )
-    ]
     if pathname == '/user/register':
         if present_region_id and present_province_id and present_citymun_id and present_brgy_id:
-            return [input_present_street, 'mb-3']
-        else: return [None, None]
+            return [False, None]
+        else: return [True, None]
     else: raise PreventUpdate
 
 # Callback for showing permanent street address input once permanent province, region, citymun, and barangay is selected
 @app.callback(
         [
-            Output('permanent_street_input', 'children'),
-            Output('permanent_street_input', 'className')
+            Output('permanent_street', 'disabled'),
+            Output('permanent_street', 'value')
         ],
         [
             Input('url', 'pathname'),
@@ -793,18 +603,10 @@ def show_presentstreet(pathname, present_region_id, present_province_id, present
 )
 
 def show_permanentstreet(pathname, permanent_region_id, permanent_prov_id, permanent_citymun_id, permanent_brgy_id):
-    input_permanent_street = [
-        dbc.Label("Street address", width = 2),
-        dbc.Col(
-            dbc.Input(
-                id = 'permanent_street',
-            ), width = 9
-        )
-    ]
     if pathname == '/user/register':
         if permanent_region_id and permanent_prov_id and permanent_citymun_id and permanent_brgy_id:
-            return [input_permanent_street, 'mb-3']
-        else: return [None, None]
+            return [False, None]
+        else: return [True, None]
     else: raise PreventUpdate
 
 # Callback for automatically generating username and checking existing list of usernames
@@ -829,6 +631,8 @@ def generate_username(pathname, user_fname, user_mname, user_lname):
         else: user_username = None
 
         if user_username:
+            user_username = user_username.replace(" ", "")
+            user_username = user_username.replace("-", "")
             sql = """SELECT user_username
                 FROM userblock.RegisteredUser
                 WHERE user_username LIKE %s;"""
@@ -851,70 +655,250 @@ def generate_username(pathname, user_fname, user_mname, user_lname):
         return [None]
     else: raise PreventUpdate
 
-"""@app.callback(
+@app.callback(
     [
+        Output('register_alert', 'color'),
+        Output('register_alert', 'children'),
+        Output('register_alert', 'is_open'),
+
         Output('register_confirmationmodal', 'is_open'),
-        Output('register_confirmationmodal', 'children')
+        Output('register_modalbody', 'children'),
     ],
     [
         Input('register_btn', 'n_clicks')
     ],
     [
-        # Basic information
-        State('user_id', 'value'),
-        State('user_type', 'value'),
         State('user_lname', 'value'),
         State('user_fname', 'value'),
         State('user_mname', 'value'),
         State('user_username', 'value'),
-        State('user_birthdate', 'value'),
+        State('user_birthdate', 'date'),
         State('user_assignedsex', 'value'),
-        # Contact details
-        State('user_email', 'value'),
         State('user_contactnum', 'value'),
-        # Present address
+        State('user_email', 'value'),
         State('present_region_id', 'value'),
         State('present_province_id', 'value'),
         State('present_citymun_id', 'value'),
         State('present_brgy_id', 'value'),
         State('present_street', 'value'),
-        # Permanent address
         State('permanent_region_id', 'value'),
         State('permanent_province_id', 'value'),
         State('permanent_citymun_id', 'value'),
         State('permanent_brgy_id', 'value'),
         State('permanent_street', 'value'),
-        # Optional information
         State('user_pronouns', 'value'),
         State('user_honorific', 'value'),
-        State('user_livedname', 'value'),
-        # Student information
-        State('student_id', 'value'),
-        State('student_year', 'value'),
-        State('degree_id', 'value'),
-        # Student and faculty information
-        State('college_id', 'value'),
-        # Faculty information
-        State('faculty_id', 'value'),
-        State('faculty_desig', 'value'),
-        # Staff information
-        State('staff_id', 'value'),
-        State('staff_desig', 'value'),
-        State('office_id', 'value'),
+        State('user_livedname', 'value')
     ]
 )
 
-def confirmation(btn, user_id, user_type, lname, fname, mname,
-                 username, birthdate, assignedsex, email, contactnum,
+def confirmation(btn, lname, fname, mname, username,
+                 birthdate, assignedsex,
+                 contactnum, email,
                  present_region, present_province, present_citymun, present_brgy, present_street,
                  permanent_region, permanent_province, permanent_citymun, permanent_brgy, permanent_street,
-                 pronouns, honorific, livedname, student_id, student_year, degree, college,
-                 faculty_id, faculty_desig, staff_id, staff_desig, office):
+                 pronouns, honorific, livedname
+                 ):
     ctx = dash.callback_context
     if ctx.triggered:
         eventid = ctx.triggered[0]['prop_id'].split('.')[0]
-        if eventid == 'register_btn' and btn:"""
-            
+        if eventid == 'register_btn' and btn:
+            alert_color = ''
+            alert_text = ''
+            alert_open = False
+            modal_open = False
+            modal_content = ''
+
+            if (lname == None or fname == None or username == None
+                or birthdate == None or assignedsex == None
+                or contactnum == None or email == None
+                or present_region == None or present_province == None or present_citymun == None or present_brgy == None or present_street == None
+                or permanent_region == None or permanent_province == None or permanent_citymun == None or permanent_brgy == None or permanent_street == None):
+                alert_color = 'danger'
+                alert_open = True
+                alert_text = "Insufficient information."
+                return [alert_color, alert_text, alert_open, modal_open, modal_content]
+            else:
+                modal_open = True
+
+                present_address = present_street
+                permanent_address = permanent_street
+
+                # Generating present address using sql query
+                sql_brgy = """ SELECT brgy_name FROM userblock.addressbarangay
+                WHERE region_id = %s AND province_id = %s AND citymun_id = %s
+                AND brgy_id = %s;""" % (present_region, present_province, present_citymun, present_brgy)
+
+                sql_citymun = """ SELECT citymun_name FROM userblock.addresscitymun
+                WHERE region_id = %s AND province_id = %s AND citymun_id = %s;""" % (present_region, present_province, present_citymun)
+
+                sql_province = """ SELECT province_name FROM userblock.addressprovince
+                WHERE region_id = %s AND province_id = %s;""" % (present_region, present_province)
+                
+                sql_region = """ SELECT region_name FROM userblock.addressregion
+                WHERE region_id = %s;""" % (present_region)
+
+                present_values = []
+                present_cols = ['brgy_name']
+                df = db.querydatafromdatabase(sql_brgy, present_values, present_cols)
+                present_address += ", "+df.iloc[0,0]
+
+                present_values = []
+                present_cols = ['citymun_name']
+                df = db.querydatafromdatabase(sql_citymun, present_values, present_cols)
+                present_address += ", "+df.iloc[0,0]
+
+                present_values = []
+                present_cols = ['province_name']
+                df = db.querydatafromdatabase(sql_province, present_values, present_cols)
+                present_address += ", "+df.iloc[0,0]
+
+                present_values = []
+                present_cols = ['region_name']
+                df = db.querydatafromdatabase(sql_region, present_values, present_cols)
+                present_address += ", "+df.iloc[0,0]
+
+                # Generating permanent address using sql query
+                sql_brgy = """ SELECT brgy_name FROM userblock.addressbarangay
+                WHERE region_id = %s AND province_id = %s AND citymun_id = %s
+                AND brgy_id = %s;""" % (permanent_region, permanent_province, permanent_citymun, permanent_brgy)
+
+                sql_citymun = """ SELECT citymun_name FROM userblock.addresscitymun
+                WHERE region_id = %s AND province_id = %s AND citymun_id = %s;""" % (permanent_region, permanent_province, permanent_citymun)
+
+                sql_province = """ SELECT province_name FROM userblock.addressprovince
+                WHERE region_id = %s AND province_id = %s;""" % (permanent_region, permanent_province)
+                
+                sql_region = """ SELECT region_name FROM userblock.addressregion
+                WHERE region_id = %s;""" % (permanent_region)
+
+                permanent_values = []
+                permanent_cols = ['brgy_name']
+                df = db.querydatafromdatabase(sql_brgy, permanent_values, permanent_cols)
+                permanent_address += ", "+df.iloc[0,0]
+
+                permanent_values = []
+                permanent_cols = ['citymun_name']
+                df = db.querydatafromdatabase(sql_citymun, permanent_values, permanent_cols)
+                permanent_address += ", "+df.iloc[0,0]
+
+                permanent_values = []
+                permanent_cols = ['province_name']
+                df = db.querydatafromdatabase(sql_province, permanent_values, permanent_cols)
+                permanent_address += ", "+df.iloc[0,0]
+
+                permanent_values = []
+                permanent_cols = ['region_name']
+                df = db.querydatafromdatabase(sql_region, permanent_values, permanent_cols)
+                permanent_address += ", "+df.iloc[0,0]
+
+                sql_assignedsex = """ SELECT assignedsex_name FROM userblock.assignedsex
+                WHERE assignedsex_id = %s;""" % (assignedsex)
+
+                assignedsex_values = []
+                assignedsex_cols = ['assignedsex_name']
+                assignedsex_df = db.querydatafromdatabase(sql_assignedsex, assignedsex_values, assignedsex_cols)
+                assignedsex_label = assignedsex_df.iloc[0,0]
+
+                modal_content = [
+                    dbc.Alert(id = 'confirm_alert', is_open = False),
+
+                    html.H5("🙋 Basic information"),
+                    html.B("Name : "), "%s, %s %s" % (lname, fname, mname), html.Br(),
+                    html.B("Username: "), username, html.Br(),
+                    html.B("Date of birth: "), birthdate, html.Br(),
+                    html.B("Assigned sex at birth: "), assignedsex_label, html.Br(),
+                    html.Br(),
+
+                    html.Div(id = 'confirm_type'),
+
+                    html.H5("📲 Contact information"),
+                    html.B("Contact number: "), contactnum, html.Br(),
+                    html.B("Email address: "), email, html.Br(),
+                    html.Br(),
+
+                    html.H5("📌 Present address"),
+                    present_address,
+                    html.Br(), html.Br(),
+
+                    html.H5("🏠 Permanent address"),
+                    permanent_address,
+                    html.Br(), html.Br(),
+                ]
+
+                if pronouns or honorific or livedname:
+                    modal_content += [html.H5("🫶 Optional information")]
+                    if honorific:
+                        modal_content += [
+                            html.B("Preferred honorific: "), honorific, html.Br()
+                        ]
+                    if livedname:
+                        modal_content += [
+                            html.B("Lived name: "), livedname, html.Br()
+                        ]
+                    if pronouns:
+                        modal_content += [
+                            html.B("Pronouns: "), pronouns, html.Br()
+                        ]
+
+                modal_content += [
+                    html.Hr(),
+                    html.H6("To confirm your information, please create your password"),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    dbc.Input(type = 'password', id = 'user_password', placeholder = 'Password' )
+                                ]
+                            )
+                        ], className = 'mb-3'
+                    ),
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    dbc.Input(type = 'password', id = 'confirm_password', placeholder = 'Confirm password' )
+                                ]
+                            )
+                        ], className = 'mb-3'
+                    ),
+                ]
+            return [alert_color, alert_text, alert_open, modal_open, modal_content]
+        else: raise PreventUpdate
+    else: raise PreventUpdate
+
+@app.callback(
+    [
+        Output('confirm_alert', 'color'),
+        Output('confirm_alert', 'children'),
+        Output('confirm_alert', 'is_open'),
+    ],
+    [
+        Input('confirm_btn', 'n_clicks'),
+        Input('user_password', 'value'),
+        Input('confirm_password', 'value')
+    ]
+)
+
+def password_check(btn, password, confirm):
+    ctx = dash.callback_context
+    if ctx.triggered:
+        eventid = ctx.triggered[0]['prop_id'].split('.')[0]
+        if eventid == 'register_btn' and btn:
+            alert_color = ''
+            alert_text = ''
+            alert_open = False
+            modal_open = False
+            modal_content = ''
+
+            if password != confirm:
+                alert_color = 'danger'
+                alert_open = True
+                alert_text = "Passwords do not match."
+                return [alert_color, alert_text, alert_open]
+            else: raise PreventUpdate
+        else: raise PreventUpdate
+    else: raise PreventUpdate
 
 layout = html.Div(
     [
@@ -929,6 +913,7 @@ layout = html.Div(
                             [
                                 html.Div(
                                     [
+                                        dbc.Alert(id = 'register_alert', is_open = False),
                                         dbc.Row(
                                             [
                                                 dbc.Label ("User type", width = 2),
@@ -945,7 +930,194 @@ layout = html.Div(
                                                 )
                                             ], className = 'mb-3'
                                         ),
-                                        html.Div(id = 'userspecific_form'),
+                                        html.Div(
+                                            [
+                                                #html.Hr(),
+                                                #html.H3("Student Information"),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Label("College", width = 2),
+                                                        dbc.Col(
+                                                            dcc.Dropdown(
+                                                                id = 'student_college_id'
+                                                            ), width = 9
+                                                        )
+                                                    ], className = 'mb-3'
+                                                ),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Label("Degree Program", width = 2),
+                                                        dbc.Col(
+                                                            dcc.Dropdown(
+                                                                id = 'degree_id',
+                                                                #disabled = True
+                                                            ), width = 9
+                                                        ),
+                                                    ], className = 'mb-3'
+                                                ),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Label("Year level", width = 2),
+                                                        dbc.Col(
+                                                            dcc.Dropdown(
+                                                                id = 'year_id'
+                                                            ),
+                                                            width = 3
+                                                        )
+                                                    ], className = 'mb-3'
+                                                ),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Label("Access type", width = 2),
+                                                        dbc.Col(
+                                                            dcc.Dropdown(
+                                                                id = 'student_accesstype_id',
+                                                                value = 1,
+                                                                disabled = True
+                                                            ), width = 3
+                                                        )
+                                                    ],
+                                                    id = 'studentid_block',
+                                                    style = {'display' : 'none'},
+                                                    className = 'mb-3'
+                                                ),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Label("Student ID No.", width = 3),
+                                                        dbc.Col(
+                                                            dbc.Input(
+                                                                type = 'text',
+                                                                id = 'student_id',
+                                                                placeholder = 'Enter ID number',
+                                                                disabled = True
+                                                            ),
+                                                            width = 3
+                                                        )
+                                                    ],
+                                                    id = 'studentid_block',
+                                                    style = {'display' : 'none'},
+                                                    className = 'mb-3'
+                                                )
+                                            ],
+                                            id = 'student_form',
+                                            style = {'display' : 'none'}
+                                        ),
+                                        html.Div(
+                                            [
+                                                #html.Hr(),
+                                                #html.H3("Faculty Information"),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Label("College", width = 2),
+                                                        dbc.Col(
+                                                            dcc.Dropdown(
+                                                                id = 'faculty_college_id'
+                                                            ), width = 9
+                                                        )
+                                                    ], className = 'mb-3'
+                                                ),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Label("Designation", width = 2),
+                                                        dbc.Col(
+                                                            dbc.Input(
+                                                                type = 'text',
+                                                                id = 'faculty_desig',
+                                                                placeholder = 'e.g. Instructor I, Professor II'
+                                                            ),
+                                                            width = 9
+                                                        )
+                                                    ], className = 'mb-3'
+                                                ),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Label("Access type", width = 2),
+                                                        dbc.Col(
+                                                            dcc.Dropdown(
+                                                                id = 'faculty_accesstype_id',
+                                                                value = 1
+                                                            ), width = 3
+                                                        ),
+                                                        html.Div(
+                                                            [
+                                                                dbc.Label("Faculty ID No.", width = 3),
+                                                                dbc.Col(
+                                                                    dbc.Input(
+                                                                        type = 'text',
+                                                                        id = 'faculty_id',
+                                                                        placeholder = 'Enter ID number',
+                                                                        disabled = True
+                                                                    ),
+                                                                    width = 3
+                                                                )
+                                                            ],
+                                                            id = 'facultyid_block',
+                                                            style = {'display' : 'none'}
+                                                        )
+                                                    ]
+                                                )
+                                            ],
+                                            id = 'faculty_form',
+                                            style = {'display' : 'none'}
+                                        ),
+                                        html.Div(
+                                            [
+                                                #html.Hr(),
+                                                #html.H3("Staff Information"),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Label("Office", width = 2),
+                                                        dbc.Col(
+                                                            dcc.Dropdown(
+                                                                id = 'office_id'
+                                                            ), width = 9
+                                                        )
+                                                    ], className = 'mb-3'
+                                                ),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Label("Designation", width = 2),
+                                                        dbc.Col(
+                                                            dbc.Input(
+                                                                type = 'text',
+                                                                id = 'staff_desig',
+                                                                placeholder = 'e.g. Registrar I, Librarian I'
+                                                            ),
+                                                            width = 9
+                                                        )
+                                                    ], className = 'mb-3'
+                                                ),
+                                                dbc.Row(
+                                                    [
+                                                        dbc.Label("Access type", width = 2),
+                                                        dbc.Col(
+                                                            dcc.Dropdown(
+                                                                id = 'staff_accesstype_id',
+                                                                value = 1,
+                                                            ), width = 3
+                                                        ),
+                                                        html.Div(
+                                                            [
+                                                                dbc.Label("Staff ID No.", width = 3),
+                                                                dbc.Col(
+                                                                    dbc.Input(
+                                                                        type = 'text',
+                                                                        id = 'staff_id',
+                                                                        placeholder = 'Enter ID number',
+                                                                        disabled = True
+                                                                    ),
+                                                                    width = 3
+                                                                )
+                                                            ],
+                                                            id = 'staffid_block',
+                                                            style = {'display' : 'none'}
+                                                        )
+                                                    ],
+                                                )
+                                            ],
+                                            id = 'staff_form',
+                                            style = {'display' : 'none'}
+                                        ),
                                         html.Hr(),
                                         html.H3("Basic Information"),
                                         dbc.Row(
@@ -1047,10 +1219,50 @@ layout = html.Div(
                                                 )
                                             ], className = 'mb-3'
                                         ),
-                                        dbc.Row(id = 'present_province'),
-                                        dbc.Row(id = 'present_citymun'),
-                                        dbc.Row(id = 'present_barangay'),
-                                        dbc.Row(id = 'present_street_input'),
+                                        dbc.Row(
+                                            [
+                                                dbc.Label("Province", width = 2),
+                                                dbc.Col(
+                                                    dcc.Dropdown(
+                                                        id = 'present_province_id', 
+                                                        disabled = True
+                                                    ), width = 9
+                                                )
+                                            ], className = 'mb-3'
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Label("City/Municipality", width = 2),
+                                                dbc.Col(
+                                                    dcc.Dropdown(
+                                                        id = 'present_citymun_id', 
+                                                        disabled = True
+                                                    ), width = 9
+                                                )
+                                            ], className = 'mb-3'
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Label("Barangay", width = 2),
+                                                dbc.Col(
+                                                    dcc.Dropdown(
+                                                        id = 'present_brgy_id', 
+                                                        disabled = True
+                                                    ), width = 9
+                                                )
+                                            ], className = 'mb-3'
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Label("Street address", width = 2),
+                                                dbc.Col(
+                                                    dbc.Input(
+                                                        id = 'present_street',
+                                                        disabled = True
+                                                    ), width = 9
+                                                )
+                                            ], className = 'mb-3'
+                                        ),
                                         html.Hr(),
                                     ], 
                                     id = 'present_address'
@@ -1068,10 +1280,50 @@ layout = html.Div(
                                                 )
                                             ], className = 'mb-3'
                                         ),
-                                        dbc.Row(id = 'permanent_province'),
-                                        dbc.Row(id = 'permanent_citymun'),
-                                        dbc.Row(id = 'permanent_barangay'),
-                                        dbc.Row(id = 'permanent_street_input'),
+                                        dbc.Row(
+                                            [
+                                                dbc.Label("Province", width = 2),
+                                                dbc.Col(
+                                                    dcc.Dropdown(
+                                                        id = 'permanent_province_id',
+                                                        disabled = True
+                                                    ), width = 9
+                                                )
+                                            ], className = 'mb-3'
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Label("City/Municipality", width = 2),
+                                                dbc.Col(
+                                                    dcc.Dropdown(
+                                                        id = 'permanent_citymun_id', 
+                                                        disabled = True
+                                                    ), width = 9
+                                                )
+                                            ], className = 'mb-3'
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Label("Barangay", width = 2),
+                                                dbc.Col(
+                                                    dcc.Dropdown(
+                                                        id = 'permanent_brgy_id',
+                                                        disabled = True
+                                                    ), width = 9
+                                                )
+                                            ], className = 'mb-3'
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Label("Street address", width = 2),
+                                                dbc.Col(
+                                                    dbc.Input(
+                                                        id = 'permanent_street',
+                                                        disabled = True
+                                                    ), width = 9
+                                                )
+                                            ], className = 'mb-3'
+                                        ),
                                         html.Hr(),
                                     ], 
                                     id = 'permanent_address'
@@ -1135,12 +1387,14 @@ layout = html.Div(
                     html.H4('Confirm details')
                 ),
                 dbc.ModalBody(
-                    'Edit me'
+                    id = 'register_modalbody'
                 ),
                 dbc.ModalFooter(
-                    dbc.Button(
-                        "Confirm", href = '/user/profile'
-                    )
+                    [
+                        dbc.Button(
+                            "Confirm", id = 'confirm_btn', href = '/user/profile'
+                        )
+                    ]
                 )
             ],
             centered = True,

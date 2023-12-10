@@ -9,7 +9,7 @@ from app import app
 from apps import commonmodules as cm
 from apps import home
 from apps import login
-from apps.user import user_dashboard, user_register
+from apps.user import user_dashboard, user_register, user_search
 
 # Layout definition
 CONTENT_STYLE = {
@@ -64,6 +64,8 @@ def displaypage(pathname):
                 returnlayout = user_dashboard.layout
             elif pathname == '/user/register':
                 returnlayout = user_register.layout
+            elif pathname == '/user/search':
+                returnlayout = user_search.layout
             else:
                 returnlayout = 'error404'
             return [returnlayout]

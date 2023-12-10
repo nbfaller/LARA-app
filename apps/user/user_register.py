@@ -746,7 +746,7 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                 or contactnum == None or email == None
                 or present_region == None or present_province == None or present_citymun == None or present_brgy == None or present_street == ''
                 or permanent_region == None or permanent_province == None or permanent_citymun == None or permanent_brgy == None or permanent_street == ''):
-                    alert_color = 'danger'
+                    alert_color = 'warning'
                     alert_open = True
                     alert_text = "Insufficient information."
                     return [alert_color, alert_text, alert_open, modal_open, modal_content]
@@ -983,26 +983,40 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
         Output('confirm_alert', 'is_open'),
     ],
     [
-        Input('register_confirmationmodal', 'is_open'),
-        Input('user_password', 'value'),
-        Input('confirm_password', 'value')
+        Input('confirm_btn', 'n_clicks'),
+    ],
+    [
+        State('user_password', 'value'),
+        State('confirm_password', 'value')
     ]
 )
 
-def password_check(modal, password, confirm):
-    if modal:
-        print(password)
-        print(confirm)
-        alert_color = ''
-        alert_text = ''
-        alert_open = False
-        if password != confirm:
-            alert_color = 'danger'
-            alert_open = True
-            alert_text = "Passwords do not match."
+def password_check(btn, password, confirm):
+    ctx = dash.callback_context
+    if ctx.triggered:
+        eventid = ctx.triggered[0]['prop_id'].split('.')[0]
+        if eventid == 'confirm_btn' and btn:
+            alert_color = ''
+            alert_text = ''
+            alert_open = False
+            if (password == None or password == '') and (confirm == None or confirm == ''):
+                alert_color = 'warning'
+                alert_open = True
+                alert_text = "Please create your password."
+            elif password == '' and confirm:
+                alert_color = 'warning'
+                alert_open = True
+                alert_text = "Please create your password."
+            elif password and confirm == '':
+                alert_color = 'warning'
+                alert_open = True
+                alert_text = "Please confirm your password."
+            elif password != confirm:
+                alert_color = 'danger'
+                alert_open = True
+                alert_text = "Passwords do not match."
             return [alert_color, alert_text, alert_open]
-        else:
-            return [alert_color, alert_text, alert_open]
+        else: raise PreventUpdate
     else: raise PreventUpdate
 
 layout = html.Div(
@@ -1497,7 +1511,7 @@ layout = html.Div(
                 dbc.ModalFooter(
                     [
                         dbc.Button(
-                            "Confirm", id = 'confirm_btn', href = '/user/profile'
+                            "Confirm", id = 'confirm_btn'
                         )
                     ]
                 )

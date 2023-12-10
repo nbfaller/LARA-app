@@ -14,7 +14,7 @@ from apps import dbconnect as db
 # Callback for populating user type and sex assigned at birth dropdown menus
 @app.callback(
     [
-        Output('user_type', 'options'),
+        Output('usertype_id', 'options'),
         Output('user_assignedsex', 'options')
     ],
     [
@@ -99,8 +99,9 @@ def register_populatecolleges(pathname):
 # Callback for populating degree program dropdown menu
 @app.callback(
     [
-        #Output('degree_id', 'disabled'),
-        Output('degree_id', 'options')
+        Output('degree_id', 'disabled'),
+        Output('degree_id', 'options'),
+        Output('degree_id', 'value')
     ],
     [
         Input('url', 'pathname'),
@@ -110,6 +111,7 @@ def register_populatecolleges(pathname):
 
 def register_populatedegrees(pathname, student_college_id):
     if pathname == '/user/register':
+        degrees = []
         if student_college_id:
             sql = """SELECT degree_name as label, degree_id as value
             FROM userblock.degreeprogram WHERE college_id = %s;
@@ -118,8 +120,8 @@ def register_populatedegrees(pathname, student_college_id):
             cols = ['label', 'value']
             df = db.querydatafromdatabase(sql, values, cols)
             degrees = df.to_dict('records')
-            return [degrees]
-        else: return [None]
+            return [False, degrees, None]
+        else: return [True, degrees, None]
     else: raise PreventUpdate
 
 # Callback for populating year level dropdown menu
@@ -177,19 +179,19 @@ def register_populateoffices(pathname):
         ],
         [
             Input('url', 'pathname'),
-            Input('user_type', 'value'),
+            Input('usertype_id', 'value'),
         ]
 )
 
-def register_showspecificforms(pathname, user_type):
+def register_showspecificforms(pathname, usertype_id):
     if pathname == '/user/register':
-        if user_type == None:
+        if usertype_id == None:
             return [{'display': 'none'}, {'display': 'none'}, {'display': 'none'}, 'ID No.']
-        elif user_type == 1:
+        elif usertype_id == 1:
             return [{'display': 'block'}, {'display': 'none'}, {'display': 'none'}, 'Student No.']
-        elif user_type == 2:
+        elif usertype_id == 2:
             return [{'display': 'none'}, {'display': 'block'}, {'display': 'none'}, 'Employee No.']
-        elif user_type == 3:
+        elif usertype_id == 3:
             return [{'display': 'none'}, {'display': 'none'}, {'display': 'block'}, 'Employee No.']
         else: raise PreventUpdate
     else: raise PreventUpdate
@@ -633,6 +635,7 @@ def generate_username(pathname, user_fname, user_mname, user_lname):
         if user_username:
             user_username = user_username.replace(" ", "")
             user_username = user_username.replace("-", "")
+            #user_username = user_username.replace("ñ", "n")
             sql = """SELECT user_username
                 FROM userblock.RegisteredUser
                 WHERE user_username LIKE %s;"""
@@ -668,36 +671,65 @@ def generate_username(pathname, user_fname, user_mname, user_lname):
         Input('register_btn', 'n_clicks')
     ],
     [
+        # Basic information
+        State('user_id', 'value'),
+        State('usertype_id', 'value'),
         State('user_lname', 'value'),
         State('user_fname', 'value'),
         State('user_mname', 'value'),
         State('user_username', 'value'),
         State('user_birthdate', 'date'),
         State('user_assignedsex', 'value'),
+
+        # Contact information
         State('user_contactnum', 'value'),
         State('user_email', 'value'),
+
+        # Present address
         State('present_region_id', 'value'),
         State('present_province_id', 'value'),
         State('present_citymun_id', 'value'),
         State('present_brgy_id', 'value'),
         State('present_street', 'value'),
+
+        # Permanent address
         State('permanent_region_id', 'value'),
         State('permanent_province_id', 'value'),
         State('permanent_citymun_id', 'value'),
         State('permanent_brgy_id', 'value'),
         State('permanent_street', 'value'),
+
+        # Optional information
         State('user_pronouns', 'value'),
         State('user_honorific', 'value'),
-        State('user_livedname', 'value')
+        State('user_livedname', 'value'),
+
+        # Student information
+        State('student_college_id', 'value'),
+        State('degree_id', 'value'),
+        State('year_id', 'value'),
+
+        # Faculty information
+        State('faculty_college_id', 'value'),
+        State('faculty_desig', 'value'),
+        State('faculty_accesstype_id', 'value'),
+
+        # Staff information
+        State('office_id', 'value'),
+        State('staff_desig', 'value'),
+        State('staff_accesstype_id', 'value'),
     ]
 )
 
-def confirmation(btn, lname, fname, mname, username,
+def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                  birthdate, assignedsex,
                  contactnum, email,
                  present_region, present_province, present_citymun, present_brgy, present_street,
                  permanent_region, permanent_province, permanent_citymun, permanent_brgy, permanent_street,
-                 pronouns, honorific, livedname
+                 pronouns, honorific, livedname,
+                 student_college, degree, year_level,
+                 faculty_college, faculty_desig, faculty_accesstype,
+                 office, staff_desig, staff_accesstype,
                  ):
     ctx = dash.callback_context
     if ctx.triggered:
@@ -709,15 +741,15 @@ def confirmation(btn, lname, fname, mname, username,
             modal_open = False
             modal_content = ''
 
-            if (lname == None or fname == None or username == None
+            if (user_id == None or user_type == None or lname == None or fname == None or username == None
                 or birthdate == None or assignedsex == None
                 or contactnum == None or email == None
-                or present_region == None or present_province == None or present_citymun == None or present_brgy == None or present_street == None
-                or permanent_region == None or permanent_province == None or permanent_citymun == None or permanent_brgy == None or permanent_street == None):
-                alert_color = 'danger'
-                alert_open = True
-                alert_text = "Insufficient information."
-                return [alert_color, alert_text, alert_open, modal_open, modal_content]
+                or present_region == None or present_province == None or present_citymun == None or present_brgy == None or present_street == ''
+                or permanent_region == None or permanent_province == None or permanent_citymun == None or permanent_brgy == None or permanent_street == ''):
+                    alert_color = 'danger'
+                    alert_open = True
+                    alert_text = "Insufficient information."
+                    return [alert_color, alert_text, alert_open, modal_open, modal_content]
             else:
                 modal_open = True
 
@@ -800,17 +832,18 @@ def confirmation(btn, lname, fname, mname, username,
                 assignedsex_df = db.querydatafromdatabase(sql_assignedsex, assignedsex_values, assignedsex_cols)
                 assignedsex_label = assignedsex_df.iloc[0,0]
 
-                modal_content = [
-                    dbc.Alert(id = 'confirm_alert', is_open = False),
+                if mname == None: mname = ""
+                
+                type_info = []
 
+                modal_content = [
                     html.H5("🙋 Basic information"),
                     html.B("Name : "), "%s, %s %s" % (lname, fname, mname), html.Br(),
+                    html.B("ID number: "), user_id, html.Br(),
                     html.B("Username: "), username, html.Br(),
                     html.B("Date of birth: "), birthdate, html.Br(),
                     html.B("Assigned sex at birth: "), assignedsex_label, html.Br(),
                     html.Br(),
-
-                    html.Div(id = 'confirm_type'),
 
                     html.H5("📲 Contact information"),
                     html.B("Contact number: "), contactnum, html.Br(),
@@ -840,9 +873,85 @@ def confirmation(btn, lname, fname, mname, username,
                         modal_content += [
                             html.B("Pronouns: "), pronouns, html.Br()
                         ]
+                    modal_content += [html.Br()]
+                
+                if user_type == 1:
+                    sql_college = """ SELECT college_name FROM userblock.college
+                    WHERE college_id = %s;""" % (student_college)
+                    college_values = []
+                    college_cols = ['college_name']
+                    college_df = db.querydatafromdatabase(sql_college, college_values, college_cols)
+                    college_label = college_df.iloc[0,0]
+
+                    sql_degree = """ SELECT degree_name FROM userblock.degreeprogram
+                    WHERE degree_id = %s;""" % (degree)
+                    degree_values = []
+                    degree_cols = ['degree_name']
+                    degree_df = db.querydatafromdatabase(sql_degree, degree_values, degree_cols)
+                    degree_label = degree_df.iloc[0,0]
+
+                    sql_year = """ SELECT year_level FROM userblock.yearlevel
+                    WHERE year_id = %s;""" % (year_level)
+                    year_values = []
+                    year_cols = ['year_level']
+                    year_df = db.querydatafromdatabase(sql_year, year_values, year_cols)
+                    year_label = year_df.iloc[0,0]
+
+                    modal_content += [
+                        html.H5("🧑‍🎓 Student information"),
+                        html.B("College: "), college_label, html.Br(),
+                        html.B("Degree program: "), degree_label, html.Br(),
+                        html.B("Year level: "), year_label, html.Br(),
+                        html.Br()
+                    ]
+                elif user_type == 2:
+                    sql_college = """ SELECT college_name FROM userblock.college
+                    WHERE college_id = %s;""" % (faculty_college)
+                    college_values = []
+                    college_cols = ['college_name']
+                    college_df = db.querydatafromdatabase(sql_college, college_values, college_cols)
+                    college_label = college_df.iloc[0,0]
+
+                    sql_accesstype = """ SELECT accesstype_name FROM userblock.accesstype
+                    WHERE accesstype_id = %s;""" % (faculty_accesstype)
+                    accesstype_values = []
+                    accesstype_cols = ['accesstype_name']
+                    accesstype_df = db.querydatafromdatabase(sql_accesstype, accesstype_values, accesstype_cols)
+                    accesstype_label = accesstype_df.iloc[0,0]
+
+                    modal_content += [
+                        html.H5("🧑‍🏫 Faculty information"),
+                        html.B("College: "), college_label, html.Br(),
+                        html.B("Designation: "), faculty_desig, html.Br(),
+                        html.B("Access type: "), accesstype_label, html.Br(),
+                        html.Br()
+                    ]
+                elif user_type == 3:
+                    sql_office = """ SELECT office_name FROM userblock.office
+                    WHERE office_id = %s;""" % (office)
+                    office_values = []
+                    office_cols = ['office_name']
+                    office_df = db.querydatafromdatabase(sql_office, office_values, office_cols)
+                    office_label = office_df.iloc[0,0]
+
+                    sql_accesstype = """ SELECT accesstype_name FROM userblock.accesstype
+                    WHERE accesstype_id = %s;""" % (staff_accesstype)
+                    accesstype_values = []
+                    accesstype_cols = ['accesstype_name']
+                    accesstype_df = db.querydatafromdatabase(sql_accesstype, accesstype_values, accesstype_cols)
+                    accesstype_label = accesstype_df.iloc[0,0]
+
+                    modal_content += [
+                        html.H5("🧑‍💼 Staff information"),
+                        html.B("Office: "), office_label, html.Br(),
+                        html.B("Designation: "), staff_desig, html.Br(),
+                        html.B("Access type: "), accesstype_label, html.Br(),
+                        html.Br()
+                    ]
 
                 modal_content += [
                     html.Hr(),
+                    dbc.Alert(id = 'confirm_alert', is_open = False),
                     html.H6("To confirm your information, please create your password"),
                     dbc.Row(
                         [
@@ -874,30 +983,26 @@ def confirmation(btn, lname, fname, mname, username,
         Output('confirm_alert', 'is_open'),
     ],
     [
-        Input('confirm_btn', 'n_clicks'),
+        Input('register_confirmationmodal', 'is_open'),
         Input('user_password', 'value'),
         Input('confirm_password', 'value')
     ]
 )
 
-def password_check(btn, password, confirm):
-    ctx = dash.callback_context
-    if ctx.triggered:
-        eventid = ctx.triggered[0]['prop_id'].split('.')[0]
-        if eventid == 'register_btn' and btn:
-            alert_color = ''
-            alert_text = ''
-            alert_open = False
-            modal_open = False
-            modal_content = ''
-
-            if password != confirm:
-                alert_color = 'danger'
-                alert_open = True
-                alert_text = "Passwords do not match."
-                return [alert_color, alert_text, alert_open]
-            else: raise PreventUpdate
-        else: raise PreventUpdate
+def password_check(modal, password, confirm):
+    if modal:
+        print(password)
+        print(confirm)
+        alert_color = ''
+        alert_text = ''
+        alert_open = False
+        if password != confirm:
+            alert_color = 'danger'
+            alert_open = True
+            alert_text = "Passwords do not match."
+            return [alert_color, alert_text, alert_open]
+        else:
+            return [alert_color, alert_text, alert_open]
     else: raise PreventUpdate
 
 layout = html.Div(
@@ -918,7 +1023,7 @@ layout = html.Div(
                                             [
                                                 dbc.Label ("User type", width = 2),
                                                 dbc.Col(
-                                                    dcc.Dropdown(id = 'user_type'), width = 3
+                                                    dcc.Dropdown(id = 'usertype_id'), width = 3
                                                 ),
                                                 dbc.Label("ID No.", id = 'user_id_label', width = 3),
                                                 dbc.Col(
@@ -950,7 +1055,7 @@ layout = html.Div(
                                                         dbc.Col(
                                                             dcc.Dropdown(
                                                                 id = 'degree_id',
-                                                                #disabled = True
+                                                                disabled = True
                                                             ), width = 9
                                                         ),
                                                     ], className = 'mb-3'

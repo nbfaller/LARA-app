@@ -15,11 +15,15 @@ CONTENT_STYLE = {
     "margin-top" : "1em",
     "margin-left" : "1em",
     "margin-right" : "1em",
-    "padding" : "1em 1em"
+    "padding" : "1em 1em",
 }
 
 app.layout = html.Div(
     [
+        html.Meta(
+            name = "theme-color",
+            content = '#286052'
+        ),
         dcc.Location(id = 'url', refresh = True),
         # LOGIN DATA
         # 1) logout indicator, storage_type='session' means that data will be retained

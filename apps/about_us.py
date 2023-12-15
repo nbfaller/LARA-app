@@ -14,23 +14,26 @@ layout = [
     html.Div(
         [
             dbc.Row(
-                html.Img(
-                        src=app.get_asset_url('logo/LARA-logo-500px-orig-green.png'),
+                [
+                    html.Img(
+                        src = app.get_asset_url('logo/LARA-logo-500px-orig-green.png'),
                         style = {
-                        'width' : '128px',
-                        'margin-left' : 'auto',
-                        'margin-right' : 'auto',
-                        'padding-top' : '2em',
-                        'padding-bottom' : '2em'
-                    }
-                )
-            ),
-            html.H1(
-                "About LÁRA",
-                style = {
-                    'margin-bottom' : '1em',
-                    'text-align' : 'center'
-                }
+                            'width' : '128px',
+                            'padding-top' : '2em',
+                            'padding-bottom' : '2em'
+                        }
+                    ),
+                    html.Img(
+                        src = app.get_asset_url('wordmark/LARA-wordmark-orange.png'),
+                        style = {
+                            'width' : '256px',
+                            'padding-top' : '2em',
+                            'padding-bottom' : '2em'
+                        }
+                    )
+                ],
+                style = {'margin-bottom' : '2em'},
+                className = 'row justify-content-center'
             ),
             html.P(
                 html.B("""

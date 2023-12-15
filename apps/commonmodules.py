@@ -139,7 +139,7 @@ footer = html.Footer(
                     [
                         html.H4(["LÁRA: Library Access & Resources Administration System"]),
                         "Copyright © 2024. University Library, Northwest Samar State University", html.Br(),
-                        html.A("About LÁRA", href = "about-us"), " • ", html.A("Main Website", href = "https://nwssu.edu.ph"), " • ", html.A("Frequently Asked Questions", href = "faq"),
+                        html.A("About LÁRA", href = "/about-us"), " • ", html.A("Main Website", href = "https://nwssu.edu.ph"), " • ", html.A("Frequently Asked Questions", href = "/faq"),
                     ],
                     width = "auto"
                 ),

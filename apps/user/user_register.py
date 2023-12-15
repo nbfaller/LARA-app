@@ -11,6 +11,8 @@ from apps import commonmodules as cm
 from app import app
 from apps import dbconnect as db
 
+import hashlib
+
 # Callback for populating user type and sex assigned at birth dropdown menus
 @app.callback(
     [

@@ -156,7 +156,7 @@ def generate_results (pathname):
                                                 #height' : '100%'
                                             }
                                         ),
-                                        href = '/user/profile/%s' % df['id'][i]
+                                        href = '/user/profile?id=%s' % df['id'][i]
                                     ),
                                     style = {
                                         'maxWidth' : '256px',
@@ -173,7 +173,7 @@ def generate_results (pathname):
                                             ),
                                             html.A(
                                                 html.H4("%s, %s %s" % (df['lname'][i], df['fname'][i], df['mname'][i]), className = "card-title"),
-                                                href = '/user/profile/%s' % df['id'][i]
+                                                href = '/user/profile?id=%s' % df['id'][i]
                                             ),
                                             html.P(
                                                 user_info,

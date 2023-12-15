@@ -7,9 +7,8 @@ import webbrowser
 from app import app
 
 from apps import commonmodules as cm
-from apps import home
-from apps import login
-from apps.user import user_dashboard, user_register, user_search
+from apps import home, login, about_us
+from apps.user import user_dashboard, user_register, user_search, user_profile
 
 # Layout definition
 CONTENT_STYLE = {
@@ -57,7 +56,7 @@ def displaypage(pathname):
             elif pathname == '/login':
                 returnlayout = login.layout
             elif pathname == '/about-us':
-                returnlayout = "about us"
+                returnlayout = about_us.layout
             elif pathname == '/faq':
                 returnlayout = "faq"
             elif pathname == '/user' or pathname == '/user/dashboard':
@@ -66,6 +65,8 @@ def displaypage(pathname):
                 returnlayout = user_register.layout
             elif pathname == '/user/search':
                 returnlayout = user_search.layout
+            elif pathname == '/user/profile':
+                returnlayout = user_profile.layout
             else:
                 returnlayout = 'error404'
             return [returnlayout]

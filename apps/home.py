@@ -41,26 +41,39 @@ def search_populatetypes(pathname):
 
 def home_loadclassifications(pathname):
     if pathname == '/' or pathname == '/home':
-        sql1 = """SELECT * FROM resourceblock.SubjectTier1"""
+        sql1 = """SELECT subj_tier1_name as label, subj_tier1_ID as value FROM utilities.SubjectTier1"""
         values1 = []
-        cols1 = ['subj_tier1_ID', 'subj_tier1_name']
+        cols1 = ['label', 'value']
         df1 = db.querydatafromdatabase(sql1, values1, cols1)
-        df1['subj_tier1_ID'] = df1['subj_tier1_ID'].apply(lambda x: '{0:0>3}'.format(x))
-        #df1['Links'] = "/search/results?subj_tier1_ID="+df1['subj_tier1_ID']
-        #df1['subj_tier1_name'] = "/search/results?subj_tier1_ID="+df1['subj_tier1_ID']
-        df1.rename(columns = {'subj_tier1_ID':'', 'subj_tier1_name':''}, inplace = True)
-        table1 = dbc.Table.from_dataframe(
-            df1, striped = False, bordered = False, hover = True, size = 'sm',
-        )
+        list1 = []
+        for i in df1.index:
+            list1.append(
+                html.A(
+                    [
+                        str(df1.iloc[i]['label']),
+                        html.Br()
+                    ],
+                    href = '/search?subj_tier1_id=' + str(df1.iloc[i]['value']).zfill(3)
+                )
+            )
 
-        sql2 = """SELECT resourcetype_name FROM resourceblock.ResourceType"""
+        sql2 = """SELECT resourcetype_name as label, resourcetype_ID as value FROM utilities.ResourceType"""
         values2 = []
-        cols2 = ['resourcetype_name']
+        cols2 = ['label', 'value']
         df2 = db.querydatafromdatabase(sql2, values2, cols2)
-        df2.rename(columns = {'resourcetype_name':''}, inplace = True)
-        table2 = dbc.Table.from_dataframe(df2, striped = False, bordered = False, hover = True, size = 'sm')
+        list2 = []
+        for i in df2.index:
+            list2.append(
+                html.A(
+                    [
+                        str(df2.iloc[i]['label']),
+                        html.Br()
+                    ],
+                    href = '/search?resourcetype_id=' + str(df2.iloc[i]['value'])
+                )
+            )
 
-        return [table1, table2]
+        return [list1, list2]
     else:
         raise PreventUpdate
 

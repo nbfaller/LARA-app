@@ -35,13 +35,12 @@ layout = [
                 style = {'margin-bottom' : '2em'},
                 className = 'row justify-content-center'
             ),
-            html.P(
-                html.B("""
+            html.H4("""
                     LÁRA an ngaran san Library Access & Resources Administration System san Northwest Samar State University (NwSSU).
                     Ginlalára sini nga sistema an durodilain nga mga proseso san library sa uusa nga web-based information system.
                     Pinaagi san LÁRA, napadali na an pag-catalog, pagbibiling, ug paghuhuram san mga libro.
-                """)
-            ),
+                """
+            ), html.Br(),
             html.P("""
                 LÁRA is the Library Access & Resources Administration System of the Northwest Samar State University (NwSSU).
                 Named after the Waray word for “weave,” LÁRA is designed to weave different library processes together into a unified
@@ -51,11 +50,13 @@ layout = [
                 """• • •""",
                 style = {'text-align' : 'center'}
             ),
-            html.P("""
-                LÁRA is a project in IE 171 and 172 (Information Systems I and II) by BS Industrial Engineering students at the
-                Industrial Engineering and Operations Research Department (IEORD) of University of the Philippines College of Engineering.
-                The project team is composed of the following individuals:
-            """),
+            html.P(
+                [
+                    "LÁRA is a project in IE 171 and 172 (Information Systems I and II) by BS Industrial Engineering students at the ",
+                    html.A("Industrial Engineering and Operations Research Department (IEORD)", href = 'https://ieor.engg.upd.edu.ph'),
+                    " of University of the Philippines College of Engineering. The project team is composed of:"
+                ]
+            ),
             dbc.Row(
                 [
                     dbc.Col(
@@ -73,7 +74,16 @@ layout = [
                                                 universally accessible education, regional development, and student leadership. He has an acute
                                                 addiction for UP Diliman kwek-kwek, Area 2 sisig, and white chocolate mocha frappucinos.
                                             """),
-                                            html.A("LinkedIn", href = 'https://www.linkedin.com/in/nbfaller')
+                                            html.A(
+                                                html.Img(
+                                                    src = app.get_asset_url('icons/linkedin.png'),
+                                                    style = {
+                                                        'width' : '32px',
+                                                        #'filter' : 'invert(35%) sepia(91%) saturate(4733%) hue-rotate(153deg) brightness(93%) contrast(98%)'
+                                                    }
+                                                ),
+                                                href = 'https://www.linkedin.com/in/nbfaller'
+                                            )
                                         ]
                                     )
                                 ]

@@ -28,7 +28,7 @@ def register_populateusertypes(pathname):
     if pathname == '/user/register':
         sql1 = """
         SELECT usertype_name as label, usertype_id as value
-        FROM userblock.usertype;
+        FROM utilities.usertype;
         """
         values1 = []
         cols1 = ['label', 'value']
@@ -38,7 +38,7 @@ def register_populateusertypes(pathname):
 
         sql2 = """
         SELECT assignedsex_name as label, assignedsex_id as value
-        FROM userblock.assignedsex;
+        FROM utilities.assignedsex;
         """
         values2 = []
         cols2 = ['label', 'value']
@@ -64,7 +64,7 @@ def register_populateusertypes(pathname):
 def register_populateaccesstypes(pathname):
     if pathname == '/user/register':
         sql = """SELECT accesstype_name as label, accesstype_id as value
-        FROM userblock.accesstype
+        FROM utilities.accesstype
         """
         values = []
         cols = ['label', 'value']
@@ -88,7 +88,7 @@ def register_populateaccesstypes(pathname):
 def register_populatecolleges(pathname):
     if pathname == '/user/register':
         sql = """SELECT college_name as label, college_id as value
-        FROM userblock.college
+        FROM utilities.college
         """
         values = []
         cols = ['label', 'value']
@@ -116,7 +116,7 @@ def register_populatedegrees(pathname, student_college_id):
         degrees = []
         if student_college_id:
             sql = """SELECT degree_name as label, degree_id as value
-            FROM userblock.degreeprogram WHERE college_id = %s;
+            FROM utilities.degreeprogram WHERE college_id = %s;
             """ % student_college_id
             values = []
             cols = ['label', 'value']
@@ -139,7 +139,7 @@ def register_populatedegrees(pathname, student_college_id):
 def register_populateyearlevels(pathname):
     if pathname == '/user/register':
         sql = """SELECT year_level as label, year_id as value
-        FROM userblock.yearlevel"""
+        FROM utilities.yearlevel"""
         values = []
         cols = ['label', 'value']
         df = db.querydatafromdatabase(sql, values, cols)
@@ -161,7 +161,7 @@ def register_populateyearlevels(pathname):
 def register_populateoffices(pathname):
     if pathname == '/user/register':
         sql = """SELECT office_name as label, office_id as value
-        FROM userblock.office
+        FROM utilities.office
         """
         values = []
         cols = ['label', 'value']
@@ -263,7 +263,7 @@ def set_staffid(pathname, user_id):
 def register_populateregions(pathname):
     if pathname == '/user/register':
         sql = """SELECT region_name as label, region_id as value
-        FROM userblock.addressregion;
+        FROM utilities.addressregion;
         """
         values = []
         cols = ['label', 'value']
@@ -328,7 +328,7 @@ def populate_presentprovinces(pathname, present_region_id):
     if pathname == '/user/register':
         if present_region_id:
             sql = """SELECT province_name as label, province_id as value
-            FROM userblock.addressprovince WHERE region_id = 
+            FROM utilities.addressprovince WHERE region_id = 
             """
             values = []
             cols = ['label', 'value']
@@ -356,7 +356,7 @@ def populate_permanentprovinces(pathname, permanent_region_id):
     if pathname == '/user/register':
         if permanent_region_id:
             sql = """SELECT province_name as label, province_id as value
-            FROM userblock.addressprovince WHERE region_id = 
+            FROM utilities.addressprovince WHERE region_id = 
             """
             values = []
             cols = ['label', 'value']
@@ -425,7 +425,7 @@ def populate_presentcitymun(pathname, present_region_id, present_province_id):
     if pathname == '/user/register':
         if present_region_id and present_province_id:
             sql = """SELECT citymun_name as label, citymun_id as value
-            FROM userblock.addresscitymun WHERE
+            FROM utilities.addresscitymun WHERE
             """
             values = []
             cols = ['label', 'value']
@@ -454,7 +454,7 @@ def populate_permanentcitymun(pathname, permanent_region_id, permanent_province_
     if pathname == '/user/register':
         if permanent_region_id and permanent_province_id:
             sql = """SELECT citymun_name as label, citymun_id as value
-            FROM userblock.addresscitymun WHERE
+            FROM utilities.addresscitymun WHERE
             """
             values = []
             cols = ['label', 'value']
@@ -526,7 +526,7 @@ def populate_presentbrgy(pathname, present_region_id, present_province_id, prese
     if pathname == '/user/register':
         if present_region_id and present_province_id and present_citymun_id:
             sql = """SELECT brgy_name as label, brgy_id as value
-            FROM userblock.addressbarangay WHERE
+            FROM utilities.addressbarangay WHERE
             """
             values = []
             cols = ['label', 'value']
@@ -556,7 +556,7 @@ def populate_permanentbrgy(pathname, permanent_region_id, permanent_province_id,
     if pathname == '/user/register':
         if permanent_region_id and permanent_province_id and permanent_citymun_id:
             sql = """SELECT brgy_name as label, brgy_id as value
-            FROM userblock.addressbarangay WHERE
+            FROM utilities.addressbarangay WHERE
             """
             values = []
             cols = ['label', 'value']
@@ -759,17 +759,17 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                 permanent_address = permanent_street
 
                 # Generating present address using sql query
-                sql_brgy = """ SELECT brgy_name FROM userblock.addressbarangay
+                sql_brgy = """ SELECT brgy_name FROM utilities.addressbarangay
                 WHERE region_id = %s AND province_id = %s AND citymun_id = %s
                 AND brgy_id = %s;""" % (present_region, present_province, present_citymun, present_brgy)
 
-                sql_citymun = """ SELECT citymun_name FROM userblock.addresscitymun
+                sql_citymun = """ SELECT citymun_name FROM utilities.addresscitymun
                 WHERE region_id = %s AND province_id = %s AND citymun_id = %s;""" % (present_region, present_province, present_citymun)
 
-                sql_province = """ SELECT province_name FROM userblock.addressprovince
+                sql_province = """ SELECT province_name FROM utilities.addressprovince
                 WHERE region_id = %s AND province_id = %s;""" % (present_region, present_province)
                 
-                sql_region = """ SELECT region_name FROM userblock.addressregion
+                sql_region = """ SELECT region_name FROM utilities.addressregion
                 WHERE region_id = %s;""" % (present_region)
 
                 present_values = []
@@ -793,17 +793,17 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                 present_address += ", "+df.iloc[0,0]
 
                 # Generating permanent address using sql query
-                sql_brgy = """ SELECT brgy_name FROM userblock.addressbarangay
+                sql_brgy = """ SELECT brgy_name FROM utilities.addressbarangay
                 WHERE region_id = %s AND province_id = %s AND citymun_id = %s
                 AND brgy_id = %s;""" % (permanent_region, permanent_province, permanent_citymun, permanent_brgy)
 
-                sql_citymun = """ SELECT citymun_name FROM userblock.addresscitymun
+                sql_citymun = """ SELECT citymun_name FROM utilities.addresscitymun
                 WHERE region_id = %s AND province_id = %s AND citymun_id = %s;""" % (permanent_region, permanent_province, permanent_citymun)
 
-                sql_province = """ SELECT province_name FROM userblock.addressprovince
+                sql_province = """ SELECT province_name FROM utilities.addressprovince
                 WHERE region_id = %s AND province_id = %s;""" % (permanent_region, permanent_province)
                 
-                sql_region = """ SELECT region_name FROM userblock.addressregion
+                sql_region = """ SELECT region_name FROM utilities.addressregion
                 WHERE region_id = %s;""" % (permanent_region)
 
                 permanent_values = []
@@ -826,7 +826,7 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                 df = db.querydatafromdatabase(sql_region, permanent_values, permanent_cols)
                 permanent_address += ", "+df.iloc[0,0]
 
-                sql_assignedsex = """ SELECT assignedsex_name FROM userblock.assignedsex
+                sql_assignedsex = """ SELECT assignedsex_name FROM utilities.assignedsex
                 WHERE assignedsex_id = %s;""" % (assignedsex)
 
                 assignedsex_values = []
@@ -878,21 +878,21 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                     modal_content += [html.Br()]
                 
                 if user_type == 1:
-                    sql_college = """ SELECT college_name FROM userblock.college
+                    sql_college = """ SELECT college_name FROM utilities.college
                     WHERE college_id = %s;""" % (student_college)
                     college_values = []
                     college_cols = ['college_name']
                     college_df = db.querydatafromdatabase(sql_college, college_values, college_cols)
                     college_label = college_df.iloc[0,0]
 
-                    sql_degree = """ SELECT degree_name FROM userblock.degreeprogram
-                    WHERE degree_id = %s;""" % (degree)
+                    sql_degree = """ SELECT degree_name FROM utilities.degreeprogram
+                    WHERE college_id = %s AND degree_id = %s;""" % (student_college, degree)
                     degree_values = []
                     degree_cols = ['degree_name']
                     degree_df = db.querydatafromdatabase(sql_degree, degree_values, degree_cols)
                     degree_label = degree_df.iloc[0,0]
 
-                    sql_year = """ SELECT year_level FROM userblock.yearlevel
+                    sql_year = """ SELECT year_level FROM utilities.yearlevel
                     WHERE year_id = %s;""" % (year_level)
                     year_values = []
                     year_cols = ['year_level']
@@ -907,14 +907,14 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                         html.Br()
                     ]
                 elif user_type == 2:
-                    sql_college = """ SELECT college_name FROM userblock.college
+                    sql_college = """ SELECT college_name FROM utilities.college
                     WHERE college_id = %s;""" % (faculty_college)
                     college_values = []
                     college_cols = ['college_name']
                     college_df = db.querydatafromdatabase(sql_college, college_values, college_cols)
                     college_label = college_df.iloc[0,0]
 
-                    sql_accesstype = """ SELECT accesstype_name FROM userblock.accesstype
+                    sql_accesstype = """ SELECT accesstype_name FROM utilities.accesstype
                     WHERE accesstype_id = %s;""" % (faculty_accesstype)
                     accesstype_values = []
                     accesstype_cols = ['accesstype_name']
@@ -929,14 +929,14 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                         html.Br()
                     ]
                 elif user_type == 3:
-                    sql_office = """ SELECT office_name FROM userblock.office
+                    sql_office = """ SELECT office_name FROM utilities.office
                     WHERE office_id = %s;""" % (office)
                     office_values = []
                     office_cols = ['office_name']
                     office_df = db.querydatafromdatabase(sql_office, office_values, office_cols)
                     office_label = office_df.iloc[0,0]
 
-                    sql_accesstype = """ SELECT accesstype_name FROM userblock.accesstype
+                    sql_accesstype = """ SELECT accesstype_name FROM utilities.accesstype
                     WHERE accesstype_id = %s;""" % (staff_accesstype)
                     accesstype_values = []
                     accesstype_cols = ['accesstype_name']

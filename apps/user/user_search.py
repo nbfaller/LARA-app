@@ -40,25 +40,25 @@ def generate_results (pathname):
 
         for i in df.index:
             # Utility queries
-            sql_utility = """SELECT userstatus_name FROM userblock.userstatus WHERE userstatus_id = %s;""" % df['userstatus'][i]
+            sql_utility = """SELECT userstatus_name FROM utilities.userstatus WHERE userstatus_id = %s;""" % df['userstatus'][i]
             values_utility = []
             cols_utility = ['userstatus_name']
             df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
             userstatus_name = df_utility.iloc[0,0]
 
-            sql_utility = """SELECT borrowstatus_name FROM userblock.borrowstatus WHERE borrowstatus_id = %s;""" % df['borrowstatus'][i]
+            sql_utility = """SELECT borrowstatus_name FROM utilities.borrowstatus WHERE borrowstatus_id = %s;""" % df['borrowstatus'][i]
             values_utility = []
             cols_utility = ['borrowstatus_name']
             df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
             borrowstatus_name = df_utility.iloc[0,0]
 
-            sql_utility = """SELECT accesstype_name FROM userblock.accesstype WHERE accesstype_id = %s;""" % df['accesstype'][i]
+            sql_utility = """SELECT accesstype_name FROM utilities.accesstype WHERE accesstype_id = %s;""" % df['accesstype'][i]
             values_utility = []
             cols_utility = ['accesstype_name']
             df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
             accesstype_name = df_utility.iloc[0,0]
 
-            sql_utility = """SELECT usertype_name FROM userblock.usertype WHERE usertype_id = %s;""" % df['usertype'][i]
+            sql_utility = """SELECT usertype_name FROM utilities.usertype WHERE usertype_id = %s;""" % df['usertype'][i]
             values_utility = []
             cols_utility = ['usertype_name']
             df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
@@ -76,19 +76,19 @@ def generate_results (pathname):
                 degree = df_student['degree'][0]
                 year_level = df_student['year_level'][0]
 
-                sql_utility = """SELECT year_level FROM userblock.yearlevel WHERE year_id = %s;""" % year_level
+                sql_utility = """SELECT year_level FROM utilities.yearlevel WHERE year_id = %s;""" % year_level
                 values_utility = []
                 cols_utility = ['year_level']
                 df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
                 year_level = df_utility['year_level'][0]
 
-                sql_utility = """SELECT degree_name FROM userblock.degreeprogram WHERE degree_id = %s AND college_id = %s;""" % (degree, college)
+                sql_utility = """SELECT degree_name FROM utilities.degreeprogram WHERE degree_id = %s AND college_id = %s;""" % (degree, college)
                 values_utility = []
                 cols_utility = ['degree_name']
                 df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
                 degree = df_utility['degree_name'][0]
 
-                sql_utility = """SELECT college_name FROM userblock.college WHERE college_id = %s;""" % college
+                sql_utility = """SELECT college_name FROM utilities.college WHERE college_id = %s;""" % college
                 values_utility = []
                 cols_utility = ['college_name']
                 df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
@@ -107,7 +107,7 @@ def generate_results (pathname):
                 college = df_faculty['college'][0]
                 faculty_desig = df_faculty['faculty_desig'][0]
 
-                sql_utility = """SELECT college_name FROM userblock.college WHERE college_id = %s;""" % college
+                sql_utility = """SELECT college_name FROM utilities.college WHERE college_id = %s;""" % college
                 values_utility = []
                 cols_utility = ['college_name']
                 df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
@@ -126,7 +126,7 @@ def generate_results (pathname):
                 office = df_staff['office'][0]
                 staff_desig = df_staff['staff_desig'][0]
 
-                sql_utility = """SELECT office_name FROM userblock.office WHERE office_id = %s;""" % office
+                sql_utility = """SELECT office_name FROM utilities.office WHERE office_id = %s;""" % office
                 values_utility = []
                 cols_utility = ['office_name']
                 df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)

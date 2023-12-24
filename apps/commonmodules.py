@@ -84,7 +84,7 @@ navbar = dbc.Navbar(
                                 dbc.NavbarBrand(
                                     [
                                         html.Img(
-                                            src=app.get_asset_url('lara-wordmark.png'),
+                                            src = app.get_asset_url('lara-wordmark.png'),
                                             style = {'height' : '2em'}
                                         )
                                     ]

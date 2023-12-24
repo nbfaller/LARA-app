@@ -35,7 +35,7 @@ def show_profile(pathname, search):
         cols = ['lname', 'fname', 'mname', 'type', 'username']
         df = db.querydatafromdatabase(sql, values, cols)
 
-        sql_utility = """SELECT usertype_name as type FROM userblock.usertype WHERE usertype_id = '%s';""" % df['type'][0]
+        sql_utility = """SELECT usertype_name as type FROM utilities.usertype WHERE usertype_id = '%s';""" % df['type'][0]
         values_utility = []
         cols_utility = ['type']
         df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)

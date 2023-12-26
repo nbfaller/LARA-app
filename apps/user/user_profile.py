@@ -1148,9 +1148,9 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                 permanent_address += "Brgy. " + df['brgy'][0] + ", " + df['citymun'][0] + ", " + df['province'][0] + ", " + df['region'][0]
 
                 sql_assignedsex = """ SELECT assignedsex_name FROM utilities.assignedsex
-                WHERE assignedsex_id = %s;""" % (assignedsex)
+                WHERE assignedsex_code = %s;"""
 
-                assignedsex_values = []
+                assignedsex_values = [assignedsex]
                 assignedsex_cols = ['assignedsex_name']
                 assignedsex_df = db.querydatafromdatabase(sql_assignedsex, assignedsex_values, assignedsex_cols)
                 assignedsex_label = assignedsex_df.iloc[0,0]
@@ -1269,7 +1269,8 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
         Output('confirm_alert', 'color'),
         Output('confirm_alert', 'children'),
         Output('confirm_alert', 'is_open'),
-        #Output('confirm_btn', 'href')
+        Output('confirm_btn', 'href'),
+        Output('confirm_btn', 'external_link')
     ],
     [
         Input('confirm_btn', 'n_clicks'),
@@ -1339,6 +1340,8 @@ def registration(btn, password, confirm,
     office, staff_desig, staff_accesstype
     ):
     ctx = dash.callback_context
+    btn_href = ''
+    external_link = False
     if ctx.triggered:
         eventid = ctx.triggered[0]['prop_id'].split('.')[0]
         if eventid == 'confirm_btn' and btn:
@@ -1362,8 +1365,12 @@ def registration(btn, password, confirm,
                 alert_open = True
                 alert_text = "Passwords do not match."
             else:
+                external_link = True
+                alert_color = 'success'
+                alert_open = True
+                alert_text = "You will be redirected to your profile."
                 encrypt_string = lambda string: hashlib.sha256(string.encode('utf-8')).hexdigest()
-                #href = '/user/profile?mode=view&id=%s' % user_id
+                btn_href = '/user/profile?mode=view&id=%s' % user_id
                 accesstype = None
                 if user_type == 1: accesstype = student_accesstype
                 elif user_type == 2: accesstype = faculty_accesstype
@@ -1403,8 +1410,7 @@ def registration(btn, password, confirm,
                     values = [user_id, office, staff_desig]
                 db.modifydatabase(sql, values)
             return [
-                alert_color, alert_text, alert_open,
-                #href
+                alert_color, alert_text, alert_open, btn_href, external_link
             ]
         else: raise PreventUpdate
     else: raise PreventUpdate
@@ -1940,7 +1946,6 @@ layout = html.Div(
                         dbc.Button(
                             "Confirm",
                             id = 'confirm_btn',
-                            href = ''
                         ),
                     ]
                 )

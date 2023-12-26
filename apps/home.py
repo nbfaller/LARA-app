@@ -53,7 +53,7 @@ def home_loadclassifications(pathname):
                         str(df1.iloc[i]['label']),
                         html.Br()
                     ],
-                    href = '/search?subj_tier1_id=' + str(df1.iloc[i]['value']).zfill(3)
+                    href = '/search?subj_tier1_id=' + str(df1.iloc[i]['value'])
                 )
             )
 

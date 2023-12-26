@@ -56,7 +56,7 @@ sidebar = dbc.Col(
         html.A(['Profile'], href = '/user/profile'), html.Br(), html.Br(),
         html.H6(['User Management']), html.Hr(),
         html.A(['Search User'], href = '/user/search'), html.Br(),
-        html.A(['Register User'], href = '/user/register'), html.Br()
+        html.A(['Register User'], href = '/user/profile?mode=register'), html.Br()
     ], width = 2,
     style = {
         #'background-color' : '#f5f5f5',

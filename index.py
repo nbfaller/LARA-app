@@ -8,7 +8,7 @@ from app import app
 
 from apps import commonmodules as cm
 from apps import home, login, about_us
-from apps.user import user_dashboard, user_register, user_search, user_profile
+from apps.user import user_dashboard, user_search, user_profile
 
 # Layout definition
 CONTENT_STYLE = {
@@ -36,6 +36,10 @@ app.layout = html.Div(
         # 3) currentrole -- stores the role
         # we will not use them but if you have roles, you can use it
         dcc.Store(id='currentrole', data=-1, storage_type='session'),
+
+        # Page mode and user id for viewing for those that have any
+        dcc.Store(id = 'page_mode', storage_type = 'memory'),
+        dcc.Store(id = 'view_id', storage_type = 'memory'),
         
         cm.navbar,
         html.Div(id = 'page-content', style = CONTENT_STYLE),
@@ -65,12 +69,10 @@ def displaypage(pathname):
                 returnlayout = "faq"
             elif pathname == '/user' or pathname == '/user/dashboard':
                 returnlayout = user_dashboard.layout
-            elif pathname == '/user/register':
-                returnlayout = user_register.layout
-            elif pathname == '/user/search':
-                returnlayout = user_search.layout
             elif pathname == '/user/profile':
                 returnlayout = user_profile.layout
+            elif pathname == '/user/search':
+                returnlayout = user_search.layout
             else:
                 returnlayout = 'error404'
             return [returnlayout]

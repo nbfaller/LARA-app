@@ -38,6 +38,11 @@
   box-sizing: border-box;
 }
 
+::selection {
+  color: #fff;
+  background: #f49c13;
+}
+
 @media (prefers-reduced-motion: no-preference) {
   :root {
     scroll-behavior: smooth;

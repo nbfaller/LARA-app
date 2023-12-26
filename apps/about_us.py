@@ -37,14 +37,14 @@ layout = [
             ),
             html.H4("""
                     LÁRA an ngaran san Library Access & Resources Administration System san Northwest Samar State University (NwSSU).
-                    Ginlalára sini nga sistema an durodilain nga mga proseso san library sa uusa nga web-based information system.
+                    Ginlalára sini nga sistema an durodilain nga mga proseso sa library sa uusa nga web-based information system.
                     Pinaagi san LÁRA, napadali na an pag-catalog, pagbibiling, ug paghuhuram san mga libro.
                 """
             ), html.Br(),
             html.P("""
                 LÁRA is the Library Access & Resources Administration System of the Northwest Samar State University (NwSSU).
                 Named after the Waray word for “weave,” LÁRA is designed to weave different library processes together into a unified
-                web-based information system. Cataloging, searching, and borrowing books has never been easier.
+                web-based information system. Book cataloging, searching, and borrowing have never been easier.
             """),
             html.P(
                 """• • •""",
@@ -155,7 +155,7 @@ layout = [
             ),
             html.P(
                 [
-                    "Furthermore, this project was made possible through the guidance and instruction of ",
+                    "This project was also made possible through the guidance and instruction of ",
                     html.A("Carlo Angelo Sonday", href = "https://ieor.engg.upd.edu.ph/people/faculty/assistant-professor/carlo-angelo-a-sonday/"),
                     " and ",
                     html.A("Pierre Allan Villena", href = "https://ieor.engg.upd.edu.ph/people/faculty/assistant-professor/pierre-allan-c-villena/"),

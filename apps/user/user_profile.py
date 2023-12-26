@@ -14,7 +14,7 @@ from apps import dbconnect as db
 
 import hashlib
 
-# Callback for retrieving page mode and profile id
+# Callback for setting page mode and profile id
 @app.callback(
     [
         Output('page_mode', 'data'),
@@ -57,7 +57,11 @@ def set_pagemode(pathname, search):
         Output('user_contactnum', 'value'), Output('user_contactnum', 'disabled'),
         Output('user_email', 'value'), Output('user_email', 'disabled'),
         Output('present_region_id', 'value'), Output('present_region_id', 'disabled'),
-        Output('permanent_region_id', 'value'), Output('permanent_region_id', 'disabled')
+        Output('permanent_region_id', 'value'), Output('permanent_region_id', 'disabled'),
+        # Optional information
+        Output('user_pronouns', 'value'), Output('user_pronouns', 'disabled'),
+        Output('user_honorific', 'value'), Output('user_honorific', 'disabled'),
+        Output('user_livedname', 'value'), Output('user_livedname', 'disabled'),
     ],
     [
         Input('url', 'pathname')
@@ -72,11 +76,11 @@ def view_populatevalues (pathname, mode, user_id):
     if pathname == '/user/profile':
         if mode == 'view':
             if user_id:
-                sql = """SELECT u_t.usertype_name as type, u.usertype_id as usertype, u.user_lname as lname, u.user_fname as fname, u.user_mname as mname,
-                u.user_username as username, u.user_birthdate as birthdate, u_as.assignedsex_id as assignedsex,
-                u.user_contactnum as contactnum, u.user_email as email,
-                pre_add.region_id as presentregion, pre_add.province_id as presentprovince, pre_add.citymun_id as presentcitymun, pre_add.brgy_id as presentbrgy, u.present_street as presentstreet,
-                per_add.region_id as permanentregion, per_add.province_id as permanentprovince, per_add.citymun_id as permanentcitymun, per_add.brgy_id as permanentbrgy, u.permanent_street as permanentstreet
+                sql = """SELECT u_t.usertype_name AS type, u.usertype_id AS usertype, u.user_lname AS lname, u.user_fname AS fname, u.user_mname AS mname,
+                u.user_username AS username, u.user_birthdate AS birthdate, u_as.assignedsex_id AS assignedsex,
+                u.user_contactnum AS contactnum, u.user_email AS email,
+                pre_add.region_id AS presentregion, per_add.region_id AS permanentregion,
+                u.user_pronouns AS pronouns, u.user_honorific AS honorific, u.user_livedname AS livedname
                 FROM userblock.registereduser AS u
                 INNER JOIN utilities.usertype AS u_t on u.usertype_id = u_t.usertype_id
                 INNER JOIN utilities.assignedsex AS u_as on u.user_assignedsex = u_as.assignedsex_code
@@ -89,29 +93,29 @@ def view_populatevalues (pathname, mode, user_id):
                     'usertype', 'lname', 'fname', 'mname',
                     'username', 'birthdate', 'assignedsex',
                     'contactnum', 'email',
-                    'presentregion', 'presentprovince', 'presentcitymun', 'presentbrgy', 'presentstreet',
-                    'permanentregion', 'permanentprovince', 'permanentcitymun', 'permanentbrgy', 'permanentstreet'
+                    'presentregion', 'permanentregion',
+                    'pronouns', 'honorific', 'livedname'
                 ]
                 df = db.querydatafromdatabase(sql, values, cols)
                 if df.shape:
-                    #print(df)
+                    mname = df['mname'][0]
+                    if mname == None: mname = ""
                     header = [
                         html.P(
                             [
                                 '%s • %s' % (df['type'][0], df['username'][0])
                             ], className = 'badge'
                         ),
-                        html.H1("%s, %s %s" % (df['lname'][0], df['fname'][0], df['mname'][0]))
+                        html.H1("%s, %s %s" % (df['lname'][0], df['fname'][0], mname))
                     ]
                     return [
                         header,
                         df['usertype'][0], True, user_id, True,
                         df['lname'][0], True, df['fname'][0], True, df['mname'][0], True,
-                        #df['username'][0],
                         df['birthdate'][0], True, df['assignedsex'][0], True,
                         df['contactnum'][0], True, df['email'][0], True,
-                        df['presentregion'][0], True, #df['presentprovince'][0], True, df['presentcitymun'][0], True, df['presentbrgy'][0], True, df['presentstreet'][0], True,
-                        df['permanentregion'][0], True, #df['permanentprovince'][0], True, df['permanentcitymun'][0], True, df['permanentbrgy'][0], True, df['permanentstreet'][0], True
+                        df['presentregion'][0], True, df['permanentregion'][0], True,
+                        df['pronouns'][0], True, df['honorific'][0], True, df['livedname'][0], True
                     ]
                 else: raise PreventUpdate
             else: raise PreventUpdate
@@ -213,12 +217,18 @@ def register_populatecolleges(pathname):
     [
         Input('url', 'pathname'),
         Input('student_college_id', 'value')
+    ],
+    [
+        State('page_mode', 'data'),
+        State('view_id', 'data')
     ]
 )
 
-def register_populatedegrees(pathname, student_college_id):
+def register_populatedegrees(pathname, student_college_id, mode, user_id):
     if pathname == '/user/profile':
+        disabled = True
         degrees = []
+        value = None
         if student_college_id:
             sql = """SELECT degree_name as label, degree_id as value
             FROM utilities.degreeprogram WHERE college_id = %s;
@@ -227,8 +237,14 @@ def register_populatedegrees(pathname, student_college_id):
             cols = ['label', 'value']
             df = db.querydatafromdatabase(sql, values, cols)
             degrees = df.to_dict('records')
-            return [False, degrees, None]
-        else: return [True, degrees, None]
+            if mode == 'view' and user_id:
+                sql = """SELECT degree_id as degree FROM userblock.userstudent WHERE student_id = %s;"""
+                values = [user_id]
+                cols = ['degree']
+                df = db.querydatafromdatabase(sql, values, cols)
+                value = df['degree'][0]
+            else: disabled = False
+        return [disabled, degrees, value]
     else: raise PreventUpdate
 
 # Callback for populating year level dropdown menu
@@ -278,51 +294,116 @@ def register_populateoffices(pathname):
 
 # Callback for showing user type-specific sections of the registration page
 @app.callback(
-        [
-            Output('student_form', 'style'), Output('faculty_form', 'style'), Output('staff_form', 'style'), Output('user_id_label', 'children'),
-            Output('student_college_id', 'value'), Output('year_id', 'value'),
-            Output('faculty_college_id', 'value'), Output('faculty_desig', 'value'), Output('faculty_accesstype_id', 'value'),
-            Output('office_id', 'value'), Output('staff_desig', 'value'), Output('staff_accesstype_id', 'value')
-        ],
-        [
-            Input('url', 'pathname'),
-            Input('usertype_id', 'value'),
-        ]
+    [
+        Output('student_form', 'style'), Output('faculty_form', 'style'), Output('staff_form', 'style'), Output('user_id_label', 'children'),
+        Output('student_college_id', 'value'), Output('student_college_id', 'disabled'), Output('year_id', 'value'), Output('year_id', 'disabled'), Output('student_accesstype_id', 'value'), Output('student_accesstype_id', 'disabled'),
+        Output('faculty_college_id', 'value'), Output('faculty_college_id', 'disabled'), Output('faculty_desig', 'value'), Output('faculty_desig', 'disabled'), Output('faculty_accesstype_id', 'value'), Output('faculty_accesstype_id', 'disabled'),
+        Output('office_id', 'value'), Output('office_id', 'disabled'), Output('staff_desig', 'value'), Output('staff_desig', 'disabled'), Output('staff_accesstype_id', 'value'), Output('staff_accesstype_id', 'disabled')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('usertype_id', 'value'),
+    ],
+    [
+        State('page_mode', 'data'),
+        State('view_id', 'data')
+    ]
 )
 
-def register_showspecificforms(pathname, usertype_id):
+def register_showspecificforms(pathname, usertype_id, mode, user_id):
     if pathname == '/user/profile':
-        blank = {'display': 'none'}
+        # Label for ID No.
+        label = 'ID No.'
+        student_label = 'Student No.'
+        employee_label = 'Employee No.'
+        # Form visibility
+        student_form = {'display': 'none'}
+        faculty_form = {'display': 'none'}
+        staff_form = {'display': 'none'}
+        # Student information
+        student_college = None
+        student_college_disabled = False
+        yearlevel = None
+        yearlevel_disabled = False
+        student_accesstype = 1
+        student_accesstype_disabled = True
+        # Faculty information
+        faculty_college = None
+        faculty_college_disabled = False
+        faculty_desig = None
+        faculty_desig_disabled = False
+        faculty_accesstype = 1
+        faculty_accesstype_disabled = False
+        # Staff informations
+        office = None
+        office_disabled = False
+        staff_desig = None
+        staff_desig_disabled = False
+        staff_accesstype = 1
+        staff_accesstype_disabled = False
         show = {'display': 'block'}
-        if usertype_id == None:
-            return [
-                blank, blank, blank, 'ID No.',
-                None, None,
-                None, None, 1,
-                None, None, 1
-            ]
-        elif usertype_id == 1:
-            return [
-                show, blank, blank, 'Student No.',
-                None, None,
-                None, None, 1,
-                None, None, 1
-            ]
-        elif usertype_id == 2:
-            return [
-                blank, show, blank, 'Employee No.',
-                None, None,
-                None, None, 1,
-                None, None, 1
-            ]
-        elif usertype_id == 3:
-            return [
-                blank, blank, show, 'Employee No.',
-                None, None,
-                None, None, 1,
-                None, None, 1
-            ]
-        else: raise PreventUpdate
+
+        if mode == 'view' and user_id:
+            student_college_disabled = True
+            yearlevel_disabled = True
+            student_accesstype_disabled = True
+            faculty_college_disabled = True
+            faculty_desig_disabled = True
+            faculty_accesstype_disabled = True
+            office_disabled = True
+            staff_desig_disabled = True
+            staff_accesstype_disabled = True
+            if usertype_id == 1:
+                sql = """SELECT us.student_college_id as college, us.year_id as yearlevel, u.accesstype_id as accesstype
+                FROM userblock.userstudent AS us
+                LEFT JOIN userblock.registereduser AS u ON us.student_id = u.user_id
+                WHERE us.student_id = %s;
+                """
+                values = [user_id]
+                cols = ['college', 'yearlevel', 'accesstype']
+                df = db.querydatafromdatabase(sql, values, cols)
+                student_college = df['college'][0]
+                yearlevel = df['yearlevel'][0]
+            if usertype_id == 2:
+                sql = """SELECT uf.faculty_college_id as college, uf.faculty_desig as desig, u.accesstype_id as accesstype
+                FROM userblock.userfaculty AS uf
+                LEFT JOIN userblock.registereduser AS u ON uf.faculty_id = u.user_id
+                WHERE uf.faculty_id = %s;
+                """
+                values = [user_id]
+                cols = ['college', 'desig', 'accesstype']
+                df = db.querydatafromdatabase(sql, values, cols)
+                faculty_college = df['college'][0]
+                faculty_desig = df['desig'][0]
+                faculty_accesstype = df['accesstype'][0]
+            if usertype_id == 3:
+                sql = """SELECT ut.office_id as office, ut.staff_desig as desig, u.accesstype_id as accesstype
+                FROM userblock.userstaff AS ut
+                LEFT JOIN userblock.registereduser AS u ON ut.staff_id = u.user_id
+                WHERE ut.staff_id = %s;
+                """
+                values = [user_id]
+                cols = ['office', 'desig', 'accesstype']
+                df = db.querydatafromdatabase(sql, values, cols)
+                office = df['office'][0]
+                staff_desig = df['desig'][0]
+                staff_accesstype = df['accesstype'][0]
+        if usertype_id == 1:
+            label = student_label
+            student_form = show
+        if usertype_id == 2:
+            label = employee_label
+            faculty_form = show
+        if usertype_id == 3:
+            label = employee_label
+            staff_form = show
+        
+        return [
+            student_form, faculty_form, staff_form, label,
+            student_college, student_college_disabled, yearlevel, yearlevel_disabled, student_accesstype, student_accesstype_disabled,
+            faculty_college, faculty_college_disabled, faculty_desig, faculty_desig_disabled, faculty_accesstype, faculty_accesstype_disabled,
+            office, office_disabled, staff_desig, staff_desig_disabled, staff_accesstype, staff_accesstype_disabled
+        ]
     else: raise PreventUpdate
 
 # Callback for setting student_id equal to user_id
@@ -526,22 +607,37 @@ def populate_permanentprovinces(pathname, permanent_region_id):
 
 # Callback for showing present citymun dropdown once present province and region is selected
 @app.callback(
-        [
-            Output('present_citymun_id', 'disabled'),
-            Output('present_citymun_id', 'value')
-        ],
-        [
-            Input('url', 'pathname'),
-            Input('present_region_id', 'value'),
-            Input('present_province_id', 'value')
-        ]
+    [
+        Output('present_citymun_id', 'disabled'),
+        Output('present_citymun_id', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('present_region_id', 'value'),
+        Input('present_province_id', 'value')
+    ],
+    [
+        State('page_mode', 'data'),
+        State('view_id', 'data')
+    ]
 )
 
-def show_presentcitymun(pathname, present_region_id, present_province_id):
+def show_presentcitymun(pathname, present_region_id, present_province_id, mode, user_id):
+    disabled = True
+    value = None
     if pathname == '/user/profile':
         if present_region_id and present_province_id:
-            return [False, None]
-        else: return [True, None]
+            if mode == 'view' and user_id:
+                sql = """SELECT u.present_citymun_id as citymun
+                FROM userblock.registereduser AS u
+                WHERE u.user_id = %s AND NOT u.userstatus_id = 4;
+                """
+                values = [user_id]
+                cols = ['citymun']
+                df = db.querydatafromdatabase(sql, values, cols)
+                value = df['citymun'][0]
+            else : disabled = False
+        return [disabled, value]
     else: raise PreventUpdate
 
 # Callback for showing permanent citymun dropdown once permanent province and region is selected
@@ -554,14 +650,29 @@ def show_presentcitymun(pathname, present_region_id, present_province_id):
         Input('url', 'pathname'),
         Input('permanent_region_id', 'value'),
         Input('permanent_province_id', 'value')
+    ],
+    [
+        State('page_mode', 'data'),
+        State('view_id', 'data')
     ]
 )
 
-def show_permanentcitymun(pathname, permanent_region_id, permanent_province_id):
+def show_permanentcitymun(pathname, permanent_region_id, permanent_province_id, mode, user_id):
+    disabled = True
+    value = None
     if pathname == '/user/profile':
         if permanent_region_id and permanent_province_id:
-            return [False, None]
-        else: return [True, None]
+            if mode == 'view' and user_id:
+                sql = """SELECT u.permanent_citymun_id as citymun
+                FROM userblock.registereduser AS u
+                WHERE u.user_id = %s AND NOT u.userstatus_id = 4;
+                """
+                values = [user_id]
+                cols = ['citymun']
+                df = db.querydatafromdatabase(sql, values, cols)
+                value = df['citymun'][0]
+            else : disabled = False
+        return [disabled, value]
     else: raise PreventUpdate
 
 # Callback for populating present citymun dropdown
@@ -622,44 +733,74 @@ def populate_permanentcitymun(pathname, permanent_region_id, permanent_province_
 
 # Callback for showing present barangay dropdown once present province, region, and citymun is selected
 @app.callback(
-        [
-            Output('present_brgy_id', 'disabled'),
-            Output('present_brgy_id', 'value')
-        ],
-        [
-            Input('url', 'pathname'),
-            Input('present_region_id', 'value'),
-            Input('present_province_id', 'value'),
-            Input('present_citymun_id', 'value')
-        ]
+    [
+        Output('present_brgy_id', 'disabled'),
+        Output('present_brgy_id', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('present_region_id', 'value'),
+        Input('present_province_id', 'value'),
+        Input('present_citymun_id', 'value')
+    ],
+    [
+        State('page_mode', 'data'),
+        State('view_id', 'data')
+    ]
 )
 
-def show_presentbrgy(pathname, present_region_id, present_province_id, present_citymun_id):
+def show_presentbrgy(pathname, present_region_id, present_province_id, present_citymun_id, mode, user_id):
+    disabled = True
+    value = None
     if pathname == '/user/profile':
         if present_region_id and present_province_id and present_citymun_id:
-            return [False, None]
-        else: return [True, None]
+            if mode == 'view' and user_id:
+                sql = """SELECT u.present_brgy_id as brgy
+                FROM userblock.registereduser AS u
+                WHERE u.user_id = %s AND NOT u.userstatus_id = 4;
+                """
+                values = [user_id]
+                cols = ['brgy']
+                df = db.querydatafromdatabase(sql, values, cols)
+                value = df['brgy'][0]
+            else : disabled = False
+        return [disabled, value]
     else: raise PreventUpdate
 
 # Callback for showing permanent barangay dropdown once permanent province, region, and citymun is selected
 @app.callback(
-        [
-            Output('permanent_brgy_id', 'disabled'),
-            Output('permanent_brgy_id', 'value')
-        ],
-        [
-            Input('url', 'pathname'),
-            Input('permanent_region_id', 'value'),
-            Input('permanent_province_id', 'value'),
-            Input('permanent_citymun_id', 'value')
-        ]
+    [
+        Output('permanent_brgy_id', 'disabled'),
+        Output('permanent_brgy_id', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('permanent_region_id', 'value'),
+        Input('permanent_province_id', 'value'),
+        Input('permanent_citymun_id', 'value')
+    ],
+    [
+        State('page_mode', 'data'),
+        State('view_id', 'data')
+    ]
 )
 
-def show_permanentbrgy(pathname, permanent_region_id, permanent_province_id, permanent_citymun_id):
+def show_permanentbrgy(pathname, permanent_region_id, permanent_province_id, permanent_citymun_id, mode, user_id):
+    disabled = True
+    value = None
     if pathname == '/user/profile':
         if permanent_region_id and permanent_province_id and permanent_citymun_id:
-            return [False, None]
-        else: return [True, None]
+            if mode == 'view' and user_id:
+                sql = """SELECT u.permanent_brgy_id as brgy
+                FROM userblock.registereduser AS u
+                WHERE u.user_id = %s AND NOT u.userstatus_id = 4;
+                """
+                values = [user_id]
+                cols = ['brgy']
+                df = db.querydatafromdatabase(sql, values, cols)
+                value = df['brgy'][0]
+            else : disabled = False
+        return [disabled, value]
     else: raise PreventUpdate
 
 # Callback for populating present barangay dropdown
@@ -722,46 +863,76 @@ def populate_permanentbrgy(pathname, permanent_region_id, permanent_province_id,
 
 # Callback for showing present street address input once permanent province, region, citymun, and barangay is selected
 @app.callback(
-        [
-            Output('present_street', 'disabled'),
-            Output('present_street', 'value')
-        ],
-        [
-            Input('url', 'pathname'),
-            Input('present_region_id', 'value'),
-            Input('present_province_id', 'value'),
-            Input('present_citymun_id', 'value'),
-            Input('present_brgy_id', 'value')
-        ]
+    [
+        Output('present_street', 'disabled'),
+        Output('present_street', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('present_region_id', 'value'),
+        Input('present_province_id', 'value'),
+        Input('present_citymun_id', 'value'),
+        Input('present_brgy_id', 'value')
+    ],
+    [
+        State('page_mode', 'data'),
+        State('view_id', 'data')
+    ]
 )
 
-def show_presentstreet(pathname, present_region_id, present_province_id, present_citymun_id, present_brgy_id):
+def show_presentstreet(pathname, present_region_id, present_province_id, present_citymun_id, present_brgy_id, mode, user_id):
+    disabled = True
+    value = None
     if pathname == '/user/profile':
         if present_region_id and present_province_id and present_citymun_id and present_brgy_id:
-            return [False, None]
-        else: return [True, None]
+            if mode == 'view' and user_id:
+                sql = """SELECT u.present_street as street
+                FROM userblock.registereduser AS u
+                WHERE u.user_id = %s AND NOT u.userstatus_id = 4;
+                """
+                values = [user_id]
+                cols = ['street']
+                df = db.querydatafromdatabase(sql, values, cols)
+                value = df['street'][0]
+            else : disabled = False
+        return [disabled, value]
     else: raise PreventUpdate
 
 # Callback for showing permanent street address input once permanent province, region, citymun, and barangay is selected
 @app.callback(
-        [
-            Output('permanent_street', 'disabled'),
-            Output('permanent_street', 'value')
-        ],
-        [
-            Input('url', 'pathname'),
-            Input('permanent_region_id', 'value'),
-            Input('permanent_province_id', 'value'),
-            Input('permanent_citymun_id', 'value'),
-            Input('permanent_brgy_id', 'value')
-        ]
+    [
+        Output('permanent_street', 'disabled'),
+        Output('permanent_street', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('permanent_region_id', 'value'),
+        Input('permanent_province_id', 'value'),
+        Input('permanent_citymun_id', 'value'),
+        Input('permanent_brgy_id', 'value')
+    ],
+    [
+        State('page_mode', 'data'),
+        State('view_id', 'data')
+    ]
 )
 
-def show_permanentstreet(pathname, permanent_region_id, permanent_prov_id, permanent_citymun_id, permanent_brgy_id):
+def show_permanentstreet(pathname, permanent_region_id, permanent_province_id, permanent_citymun_id, permanent_brgy_id, mode, user_id):
+    disabled = True
+    value = None
     if pathname == '/user/profile':
-        if permanent_region_id and permanent_prov_id and permanent_citymun_id and permanent_brgy_id:
-            return [False, None]
-        else: return [True, None]
+        if permanent_region_id and permanent_province_id and permanent_citymun_id and permanent_brgy_id:
+            if mode == 'view' and user_id:
+                sql = """SELECT u.permanent_street as street
+                FROM userblock.registereduser AS u
+                WHERE u.user_id = %s AND NOT u.userstatus_id = 4;
+                """
+                values = [user_id]
+                cols = ['street']
+                df = db.querydatafromdatabase(sql, values, cols)
+                value = df['street'][0]
+            else : disabled = False
+        return [disabled, value]
     else: raise PreventUpdate
 
 # Callback for automatically generating username and checking existing list of usernames

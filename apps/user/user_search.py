@@ -5,7 +5,7 @@ import dash
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import pandas as pd
-import numpy
+import os
 
 from apps import commonmodules as cm
 from app import app
@@ -68,7 +68,7 @@ def populate_usertypedropdown (pathname):
 
 def generate_results (pathname, input, usertype_filter, userstatus_filter, borrowstatus_filter, accesstype_filter):
     if pathname == '/user/search':
-        sql = """SELECT u.user_id as id, u.user_username as username, u.user_lname as lname, u.user_fname as fname, u.user_mname as mname,
+        sql = """SELECT u.user_id as id, u.user_username as username, u.user_lname as lname, u.user_fname as fname, u.user_mname as mname, u.user_livedname as livedname, u.user_pronouns as pronouns,
         t.usertype_name as usertype, b.borrowstatus_name as borrowstatus, s.userstatus_name as userstatus, a.accesstype_name as accesstype,
         us.degree_id as studentdegree, us.student_college_id as studentcollege, us.year_id as studentyear,
         uf.faculty_college_id as facultycollege, uf.faculty_desig as facultydesig,
@@ -86,7 +86,7 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
 
         values = []
         cols = [
-            'id', 'username', 'lname', 'fname', 'mname',
+            'id', 'username', 'lname', 'fname', 'mname', 'livedname', 'pronouns',
             'usertype', 'borrowstatus', 'userstatus', 'accesstype',
             'studentdegree', 'studentcollege', 'studentyear',
             'facultycollege', 'facultydesig',
@@ -158,8 +158,8 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
                 LEFT JOIN utilities.degreeprogram AS us_d ON (us.degree_id = us_d.degree_id AND us.student_college_id = us_d.college_id)
                 LEFT JOIN utilities.college AS us_c ON us.student_college_id = us_c.college_id
                 LEFT JOIN utilities.yearlevel AS us_y on us.year_id = us_y.year_id
-                WHERE student_id = '%s';""" % df['id'][i]
-                values_utility = []
+                WHERE student_id = %s;"""
+                values_utility = [df['id'][i]]
                 cols_utility = ['degree', 'college', 'yearlevel']
                 df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
 
@@ -171,8 +171,8 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
                 sql_utility = """SELECT uf_c.college_name AS college, uf.faculty_desig AS desig
                 FROM userblock.userfaculty AS uf
                 LEFT JOIN utilities.college AS uf_c ON uf.faculty_college_id = uf_c.college_id
-                WHERE faculty_id = '%s';""" % df['id'][i]
-                values_utility = []
+                WHERE faculty_id = %s;"""
+                values_utility = [df['id'][i]]
                 cols_utility = ['college', 'desig']
                 df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
 
@@ -184,8 +184,8 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
                 sql_utility = """SELECT ut_o.office_name AS office, ut.staff_desig AS desig
                 FROM userblock.userstaff AS ut
                 LEFT JOIN utilities.office AS ut_o ON ut.office_id = ut_o.office_id
-                WHERE staff_id = '%s';""" % df['id'][i]
-                values_utility = []
+                WHERE staff_id = %s;"""
+                values_utility = [df['id'][i]]
                 cols_utility = ['office', 'desig']
                 df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
 
@@ -193,10 +193,27 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
                     html.B(df_utility['desig'][0]), html.Br(),
                     df_utility['office'][0]
                 ]
-
+            
+            mname = ""
             if df['mname'][i]:
-                df.loc[i,'mname'] = str(df['mname'][i][0]).upper() + "."
-            else: df.loc[i,'mname'] = ""
+                mname = str(df['mname'][i][0]).upper() + "."
+            else: mname = ""
+
+            name = ""
+            if df['livedname'][i]: name = df['livedname'][i]
+            else: name = df['fname'][i]
+
+            pronouns = ""
+            if df['pronouns'][i]:
+                user_info.append(html.Br())
+                user_info.append(
+                    " (%s)" % df['pronouns'][i]
+                )
+            
+            image_path = ""
+            if os.path.exists("assets/users/%s-%s-%s.jpg" % (df['usertype'][i].lower(), df['id'][i], df['username'][i])):
+                image_path = "/assets/users/%s-%s-%s.jpg" % (df['usertype'][i].lower(), df['id'][i], df['username'][i])
+            else: image_path = "/assets/users/default.jpg"
 
             results.append(
                 dbc.Card(
@@ -206,7 +223,7 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
                                 dbc.Col(
                                     html.A(
                                         dbc.CardImg(
-                                            src="/assets/users/%s-%s-%s.jpg" % (df['usertype'][i].lower(), df['id'][i], df['username'][i]),
+                                            src = image_path,
                                             className="img-fluid rounded-start",
                                             style = {
                                                 'border-radius' : '15px',
@@ -228,7 +245,7 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
                                                 className="card-text text-muted",
                                             ),
                                             html.A(
-                                                html.H4("%s, %s %s" % (df['lname'][i], df['fname'][i], df['mname'][i]), className = "card-title"),
+                                                html.H4("%s, %s %s" % (df['lname'][i], name, mname), className = "card-title"),
                                                 href = '/user/profile?mode=view&id=%s' % df['id'][i]
                                             ),
                                             html.P(
@@ -342,6 +359,28 @@ def activate_dropdown(pathname, usertype, userstatus, borrowstatus, accesstype):
             ]
             color_at = 'primary'
         return [color_ut, label_ut, color_us, label_us, color_bs, label_bs, color_at, label_at]
+    else: raise PreventUpdate
+
+# Callback for clearing filters
+@app.callback(
+    [
+        Output('usertype_checklist', 'value'),
+        Output('userstatus_checklist', 'value'),
+        Output('borrowstatus_checklist', 'value'),
+        Output('accesstype_checklist', 'value')
+    ],
+    [
+        Input('clearfilters_btn', 'n_clicks')
+    ]
+)
+
+def clear_filters(btn):
+    ctx = dash.callback_context
+    if ctx.triggered:
+        eventid = ctx.triggered[0]['prop_id'].split('.')[0]
+        if eventid == 'clearfilters_btn' and btn:
+            return [[], [], [], []]
+        else: raise PreventUpdate
     else: raise PreventUpdate
 
 layout = html.Div(

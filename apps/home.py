@@ -82,7 +82,15 @@ layout = html.Div(
         html.Div(
             [
                 html.H1(
-                    ["""Your books, now at the reach of your fingertips."""],
+                    [
+                        html.Span(
+                            """Your books, now at the reach of your fingertips.""",
+                            style = {
+                                #'color' : '#f5f5f5',
+                                'background-color' : '#f49c13'
+                            }
+                        )
+                    ],
                     style = {
                         'max-width' : '16em',
                         #'font-size' : '40px',
@@ -98,7 +106,8 @@ layout = html.Div(
                     src=app.get_asset_url('banner.jpg'),
                     style = {
                         'height' : '30em',
-                        'z-index' : '-1'
+                        'z-index' : '-1',
+                        'mask-image' : 'linear-gradient(to bottom, rgba(0, 0, 0, 1.0) 50%, transparent 100%)'
                     }
                 ),
             ],

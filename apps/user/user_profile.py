@@ -24,11 +24,12 @@ import hashlib
         Input('url', 'pathname')
     ],
     [
-        State('url', 'search')
+        State('url', 'search'),
+        State('currentuserid', 'value')
     ]
 )
 
-def set_pagemode(pathname, search):
+def set_pagemode(pathname, search, current_id):
     mode = 'view'
     user_id = None
     if pathname == '/user/profile':
@@ -37,7 +38,36 @@ def set_pagemode(pathname, search):
             mode = parse_qs(parsed.query)['mode'][0]
             if parsed.query.find("&") > -1:
                 user_id = parse_qs(parsed.query)['id'][0]
+            else: user_id = current_id
+        else: user_id = current_id
         return [mode, user_id]
+    else: raise PreventUpdate
+
+# Callback for changing buttons for different modes
+@app.callback(
+    [
+        Output('register_btn', 'style'),
+        Output('edit_btn', 'style')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('url', 'search')
+    ]
+)
+
+def mode_changebtn(pathname, search):
+    if pathname == '/user/profile':
+        blank = {'display' : 'none'}
+        show = {'display' : 'block'}
+        register = blank
+        edit = show
+        parsed = urlparse(search)
+        if parse_qs(parsed.query):
+            mode = parse_qs(parsed.query)['mode'][0]
+            if mode == 'register':
+                register = show
+                edit = blank
+        return [register, edit]
     else: raise PreventUpdate
 
 # Callback for populating values if mode is 'view'
@@ -77,7 +107,7 @@ def view_populatevalues (pathname, mode, user_id):
         if mode == 'view':
             if user_id:
                 sql = """SELECT u_t.usertype_name AS type, u.usertype_id AS usertype, u.user_lname AS lname, u.user_fname AS fname, u.user_mname AS mname,
-                u.user_username AS username, u.user_birthdate AS birthdate, u_as.assignedsex_id AS assignedsex,
+                u.user_username AS username, u.user_birthdate AS birthdate, u_as.assignedsex_code AS assignedsex,
                 u.user_contactnum AS contactnum, u.user_email AS email,
                 pre_add.region_id AS presentregion, per_add.region_id AS permanentregion,
                 u.user_pronouns AS pronouns, u.user_honorific AS honorific, u.user_livedname AS livedname
@@ -98,15 +128,18 @@ def view_populatevalues (pathname, mode, user_id):
                 ]
                 df = db.querydatafromdatabase(sql, values, cols)
                 if df.shape:
-                    mname = df['mname'][0]
-                    if mname == None: mname = ""
+                    fname = ""
+                    mname = ""
+                    if df['mname'][0]: mname = str(df['mname'][0][0]).upper() + "."
+                    if df['livedname'][0]: fname = df['livedname'][0]
+                    else: fname = df['fname'][0]
                     header = [
                         html.P(
                             [
                                 '%s • %s' % (df['type'][0], df['username'][0])
                             ], className = 'badge'
                         ),
-                        html.H1("%s, %s %s" % (df['lname'][0], df['fname'][0], mname))
+                        html.H1("%s, %s %s" % (df['lname'][0], fname, mname))
                     ]
                     return [
                         header,
@@ -146,7 +179,7 @@ def register_populateusertypes(pathname):
         user_types = df1.to_dict('records')
 
         sql2 = """
-        SELECT assignedsex_name as label, assignedsex_id as value
+        SELECT assignedsex_name as label, assignedsex_code as value
         FROM utilities.assignedsex;
         """
         values2 = []
@@ -945,38 +978,48 @@ def show_permanentstreet(pathname, permanent_region_id, permanent_province_id, p
         Input('user_fname', 'value'),
         Input('user_mname', 'value'),
         Input('user_lname', 'value'),
+    ],
+    [
+        State('page_mode', 'data'),
+        State('view_id', 'data')
     ]
 )
 
-def generate_username(pathname, user_fname, user_mname, user_lname):
+def generate_username(pathname, user_fname, user_mname, user_lname, mode, user_id):
     if pathname == '/user/profile':
-        if user_fname and user_mname and user_lname:
-            user_username = user_fname[0]+user_mname[0]+user_lname
-        elif user_fname and user_lname:
-            user_username = user_fname[0]+user_lname
-        else: user_username = None
-
-        if user_username:
-            user_username = user_username.replace(" ", "")
-            user_username = user_username.replace("-", "")
-            #user_username = user_username.replace("ñ", "n")
-            sql = """SELECT user_username
-                FROM userblock.RegisteredUser
-                WHERE user_username LIKE %s;"""
-            values = [f"%{user_username.lower()}%"]
-            cols = ['user_username']
+        if mode == 'view' and user_id:
+            sql = """SELECT u.user_username as username FROM userblock.registereduser AS u WHERE u.user_id = %s;"""
+            values = [user_id]
+            cols = ['username']
             df = db.querydatafromdatabase(sql, values, cols)
-            df = df[df['user_username'] == user_username.lower()]
-            
-            if not df.empty:
-                lastchar = df.tail().values[0][0][-1]
-                if lastchar.isnumeric():
-                    return [user_username.lower()+str(int(lastchar)+1)]
-                else:
-                    return [user_username.lower()+"1"]
-            else:
-                return [user_username.lower()]
+            return [df['username'][0]]
+        else:
+            if user_fname and user_mname and user_lname:
+                user_username = user_fname[0]+user_mname[0]+user_lname
+            elif user_fname and user_lname:
+                user_username = user_fname[0]+user_lname
+            else: user_username = None
 
+            if user_username:
+                user_username = user_username.replace(" ", "")
+                user_username = user_username.replace("-", "")
+                #user_username = user_username.replace("ñ", "n")
+                sql = """SELECT user_username
+                    FROM userblock.RegisteredUser
+                    WHERE user_username LIKE %s;"""
+                values = [f"%{user_username.lower()}%"]
+                cols = ['user_username']
+                df = db.querydatafromdatabase(sql, values, cols)
+                df = df[df['user_username'] == user_username.lower()]
+                
+                if not df.empty:
+                    lastchar = df.tail().values[0][0][-1]
+                    if lastchar.isnumeric():
+                        return [user_username.lower()+str(int(lastchar)+1)]
+                    else:
+                        return [user_username.lower()+"1"]
+                else:
+                    return [user_username.lower()]
         return [None]
     else: raise PreventUpdate
 
@@ -1114,9 +1157,17 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
 
                 if mname == None: mname = ""
                 
-                type_info = []
+                name = ""
+                if honorific: name += honorific + " "
+                if livedname: name += livedname + " "
+                else: name += fname + " "
+                name += "%s" % lname + " "
+                if pronouns: name += "(%s)" % pronouns
+                #print(name)
 
                 modal_content = [
+                    "Please confirm your information,", html.Br(),
+                    html.H4([name]), html.Br(),
                     html.H5("🙋 Basic information"),
                     html.B("Name : "), "%s, %s %s" % (lname, fname, mname), html.Br(),
                     html.B("ID number: "), user_id, html.Br(),
@@ -1138,22 +1189,6 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                     permanent_address,
                     html.Br(), html.Br(),
                 ]
-
-                if pronouns or honorific or livedname:
-                    modal_content += [html.H5("🫶 Optional information")]
-                    if honorific:
-                        modal_content += [
-                            html.B("Preferred honorific: "), honorific, html.Br()
-                        ]
-                    if livedname:
-                        modal_content += [
-                            html.B("Lived name: "), livedname, html.Br()
-                        ]
-                    if pronouns:
-                        modal_content += [
-                            html.B("Pronouns: "), pronouns, html.Br()
-                        ]
-                    modal_content += [html.Br()]
                 
                 if user_type == 1:
                     sql = """ SELECT us_c.college_name AS college, us_d.degree_name AS degree
@@ -1178,7 +1213,7 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                         html.B("College: "), college_label, html.Br(),
                         html.B("Degree program: "), degree_label, html.Br(),
                         html.B("Year level: "), year_label, html.Br(),
-                        html.Br()
+                        #html.Br()
                     ]
                 elif user_type == 2:
                     sql = """ SELECT college_name FROM utilities.college WHERE college_id = %s;"""
@@ -1199,7 +1234,7 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                         html.B("College: "), college_label, html.Br(),
                         html.B("Designation: "), faculty_desig, html.Br(),
                         html.B("Access type: "), accesstype_label, html.Br(),
-                        html.Br()
+                        #html.Br()
                     ]
                 elif user_type == 3:
                     sql = """ SELECT office_name FROM utilities.office WHERE office_id = %s;"""
@@ -1219,52 +1254,90 @@ def confirmation(btn, user_id, user_type, lname, fname, mname, username,
                         html.B("Office: "), office_label, html.Br(),
                         html.B("Designation: "), staff_desig, html.Br(),
                         html.B("Access type: "), accesstype_label, html.Br(),
-                        html.Br()
+                        #html.Br()
                     ]
 
                 modal_content += [
-                    html.Hr(),
-                    dbc.Alert(id = 'confirm_alert', is_open = False),
-                    html.H6("To confirm your information, please create your password"),
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                [
-                                    dbc.Input(type = 'password', id = 'user_password', placeholder = 'Password' )
-                                ]
-                            )
-                        ], className = 'mb-3'
-                    ),
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                [
-                                    dbc.Input(type = 'password', id = 'confirm_password', placeholder = 'Confirm password' )
-                                ]
-                            )
-                        ], className = 'mb-3'
-                    ),
                 ]
             return [alert_color, alert_text, alert_open, modal_open, modal_content]
         else: raise PreventUpdate
     else: raise PreventUpdate
 
+# Callback for checking password and registering new user
 @app.callback(
     [
         Output('confirm_alert', 'color'),
         Output('confirm_alert', 'children'),
         Output('confirm_alert', 'is_open'),
+        #Output('confirm_btn', 'href')
     ],
     [
         Input('confirm_btn', 'n_clicks'),
     ],
     [
         State('user_password', 'value'),
-        State('confirm_password', 'value')
+        State('confirm_password', 'value'),
+        # Basic information
+        State('user_id', 'value'),
+        State('usertype_id', 'value'),
+        State('user_lname', 'value'),
+        State('user_fname', 'value'),
+        State('user_mname', 'value'),
+        State('user_username', 'value'),
+        State('user_birthdate', 'date'),
+        State('user_assignedsex', 'value'),
+
+        # Contact information
+        State('user_contactnum', 'value'),
+        State('user_email', 'value'),
+
+        # Present address
+        State('present_region_id', 'value'),
+        State('present_province_id', 'value'),
+        State('present_citymun_id', 'value'),
+        State('present_brgy_id', 'value'),
+        State('present_street', 'value'),
+
+        # Permanent address
+        State('permanent_region_id', 'value'),
+        State('permanent_province_id', 'value'),
+        State('permanent_citymun_id', 'value'),
+        State('permanent_brgy_id', 'value'),
+        State('permanent_street', 'value'),
+
+        # Optional information
+        State('user_pronouns', 'value'),
+        State('user_honorific', 'value'),
+        State('user_livedname', 'value'),
+
+        # Student information
+        State('student_college_id', 'value'),
+        State('degree_id', 'value'),
+        State('year_id', 'value'),
+        State('student_accesstype_id', 'value'),
+
+        # Faculty information
+        State('faculty_college_id', 'value'),
+        State('faculty_desig', 'value'),
+        State('faculty_accesstype_id', 'value'),
+
+        # Staff information
+        State('office_id', 'value'),
+        State('staff_desig', 'value'),
+        State('staff_accesstype_id', 'value'),
     ]
 )
 
-def password_check(btn, password, confirm):
+def registration(btn, password, confirm,
+    user_id, user_type, lname, fname, mname, username, birthdate, assignedsex,
+    contactnum, email,
+    present_region, present_province, present_citymun, present_brgy, present_street,
+    permanent_region, permanent_province, permanent_citymun, permanent_brgy, permanent_street,
+    pronouns, honorific, livedname,
+    student_college, degree, year_level, student_accesstype,
+    faculty_college, faculty_desig, faculty_accesstype,
+    office, staff_desig, staff_accesstype
+    ):
     ctx = dash.callback_context
     if ctx.triggered:
         eventid = ctx.triggered[0]['prop_id'].split('.')[0]
@@ -1288,7 +1361,51 @@ def password_check(btn, password, confirm):
                 alert_color = 'danger'
                 alert_open = True
                 alert_text = "Passwords do not match."
-            return [alert_color, alert_text, alert_open]
+            else:
+                encrypt_string = lambda string: hashlib.sha256(string.encode('utf-8')).hexdigest()
+                #href = '/user/profile?mode=view&id=%s' % user_id
+                accesstype = None
+                if user_type == 1: accesstype = student_accesstype
+                elif user_type == 2: accesstype = faculty_accesstype
+                elif user_type == 3: accesstype = staff_accesstype
+                sql = """INSERT INTO userblock.registereduser (user_id, usertype_id, accesstype_id, user_lname, user_fname, user_mname, user_username,
+                    user_birthdate, user_assignedsex, user_contactnum, user_email,
+                    present_region_id, present_province_id, present_citymun_id, present_brgy_id, present_street,
+                    permanent_region_id, permanent_province_id, permanent_citymun_id, permanent_brgy_id, permanent_street,
+                    user_pronouns, user_honorific, user_livedname,
+                    user_password)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s, %s,
+                    %s, %s, %s,
+                    %s);
+                """
+                values = [user_id, user_type, accesstype, lname, fname, mname, username,
+                    birthdate, assignedsex, contactnum, email,
+                    present_region, present_province, present_citymun, present_brgy, present_street,
+                    permanent_region, permanent_province, permanent_citymun, permanent_brgy, permanent_street,
+                    pronouns, honorific, livedname,
+                    encrypt_string(password)
+                ]
+                db.modifydatabase(sql, values)
+                if user_type == 1:
+                    sql = """INSERT INTO userblock.userstudent (student_id, student_college_id, degree_id, year_id)
+                        VALUES (%s, %s, %s, %s);"""
+                    values = [user_id, student_college, degree, year_level]
+                elif user_type == 2:
+                    sql = """INSERT INTO userblock.userfaculty (faculty_id, faculty_college_id, faculty_desig)
+                        VALUES (%s, %s, %s);"""
+                    values = [user_id, faculty_college, faculty_desig]
+                elif user_type == 3:
+                    sql = """INSERT INTO userblock.userstaff (staff_id, office_id, staff_desig)
+                        VALUES (%s, %s, %s);"""
+                    values = [user_id, office, staff_desig]
+                db.modifydatabase(sql, values)
+            return [
+                alert_color, alert_text, alert_open,
+                #href
+            ]
         else: raise PreventUpdate
     else: raise PreventUpdate
 
@@ -1600,6 +1717,53 @@ layout = html.Div(
                                                 )
                                             ], className = 'mb-3'
                                         ),
+                                        html.H5("Affirmative identity"),
+                                        dbc.Col(
+                                            [
+                                                html.P("""The University Library seeks to promote and protect the ability of students,
+                                                    faculty, and staff to freely express their sexual orientation, gender identity,
+                                                    and expression (SOGIE). Everyone is enjoined to fill out these details whenever
+                                                    applicable. """)
+                                            ],
+                                            width = 11
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Label("Pronouns", width = 2),
+                                                dbc.Col(
+                                                    dbc.Input(
+                                                        type = 'text',
+                                                        id = 'user_pronouns',
+                                                        placeholder = 'E.g. they/them, she/her, he/him'
+                                                    ), width = 3
+                                                ),
+                                                dbc.Label("Preferred honorific", width = 3),
+                                                dbc.Col(
+                                                    dbc.Input(
+                                                        type = 'text',
+                                                        id = 'user_honorific',
+                                                        placeholder = 'E.g. Mx., Mrs., Ms., Mr., Dr.'
+                                                    ), width = 3
+                                                )
+                                            ], className = 'mb-3'
+                                        ),
+                                        dbc.Row(
+                                            [
+                                                dbc.Label("Lived name", width = 2, id = 'user_livedname_label'),
+                                                dbc.Col(
+                                                    dbc.Input(
+                                                        type = 'text',
+                                                        id = 'user_livedname',
+                                                        placeholder = 'Enter lived name'
+                                                    ), width = 9
+                                                ),
+                                                dbc.Tooltip(
+                                                    """Per Memorandum No. OVCAA-MTTP 21-029 of the Vice Chancellor for Academic Affairs of UP Diliman, a
+                                                    lived name is a name that affirms one's gender identity and/or expression (GIE).""",
+                                                    target = 'user_livedname_label'
+                                                )
+                                            ], className = 'mb-3'
+                                        ),
                                         html.Hr(),
                                     ], id = 'basic_information'
                                 ),
@@ -1721,58 +1885,20 @@ layout = html.Div(
                                                 )
                                             ], className = 'mb-3'
                                         ),
-                                        html.Hr(),
                                     ], 
                                     id = 'permanent_address'
-                                ),
-                                html.Div(
-                                    [
-                                        html.H3("Optional information"),
-                                        dbc.Row(
-                                            [
-                                                dbc.Label("Pronouns", width = 2),
-                                                dbc.Col(
-                                                    dbc.Input(
-                                                        type = 'text',
-                                                        id = 'user_pronouns',
-                                                        placeholder = 'E.g. they/them, she/her, he/him'
-                                                    ), width = 3
-                                                ),
-                                                dbc.Label("Preferred honorific", width = 3),
-                                                dbc.Col(
-                                                    dbc.Input(
-                                                        type = 'text',
-                                                        id = 'user_honorific',
-                                                        placeholder = 'E.g. Mx., Mrs., Ms., Mr., Dr.'
-                                                    ), width = 3
-                                                )
-                                            ], className = 'mb-3'
-                                        ),
-                                        dbc.Row(
-                                            [
-                                                dbc.Label("Lived name", width = 2, id = 'user_livedname_label'),
-                                                dbc.Col(
-                                                    dbc.Input(
-                                                        type = 'text',
-                                                        id = 'user_livedname',
-                                                        placeholder = 'Enter lived name'
-                                                    ), width = 9
-                                                ),
-                                                dbc.Tooltip(
-                                                    """Per Memorandum No. OVCAA-MTTP 21-029 of the Vice Chancellor for Academic Affairs of UP Diliman, a
-                                                    lived name is a name that affirms one's gender identity and/or expression (GIE).""",
-                                                    target = 'user_livedname_label'
-                                                )
-                                            ], className = 'mb-3'
-                                        ),
-                                    ], id = 'optional_information'
                                 )
                             ]
                         ),
                         dbc.ModalFooter(
-                            dbc.Button(
-                                "Register", color = 'primary', id = 'register_btn'
-                            )
+                            [
+                                dbc.Button(
+                                    "Register", color = 'primary', id = 'register_btn'
+                                ),
+                                dbc.Button(
+                                    "Edit", color = 'primary', id = 'edit_btn'
+                                )
+                            ]
                         )
                     ]
                 )
@@ -1784,13 +1910,38 @@ layout = html.Div(
                     html.H4('Confirm details')
                 ),
                 dbc.ModalBody(
-                    id = 'register_modalbody'
+                    [
+                        html.Div(id = 'register_modalbody'),
+                        html.Hr(),
+                        dbc.Alert(id = 'confirm_alert', is_open = False),
+                        html.H6("To confirm your information, please create your password"),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        dbc.Input(type = 'password', id = 'user_password', placeholder = 'Password' )
+                                    ]
+                                )
+                            ], className = 'mb-3'
+                        ),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        dbc.Input(type = 'password', id = 'confirm_password', placeholder = 'Confirm password' )
+                                    ]
+                                )
+                            ], className = 'mb-3'
+                        ),
+                    ]
                 ),
                 dbc.ModalFooter(
                     [
                         dbc.Button(
-                            "Confirm", id = 'confirm_btn'
-                        )
+                            "Confirm",
+                            id = 'confirm_btn',
+                            href = ''
+                        ),
                     ]
                 )
             ],

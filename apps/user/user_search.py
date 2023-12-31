@@ -210,10 +210,9 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
                     " (%s)" % df['pronouns'][i]
                 )
             
-            image_path = ""
+            image_path = "/assets/users/default.jpg"
             if os.path.exists("assets/users/%s-%s-%s.jpg" % (df['usertype'][i].lower(), df['id'][i], df['username'][i])):
                 image_path = "/assets/users/%s-%s-%s.jpg" % (df['usertype'][i].lower(), df['id'][i], df['username'][i])
-            else: image_path = "/assets/users/default.jpg"
 
             results.append(
                 dbc.Card(

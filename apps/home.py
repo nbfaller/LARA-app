@@ -11,8 +11,14 @@ from app import app
 from apps import dbconnect as db
 
 @app.callback(
-        [Output('search_type', 'options')],
-        [Input('url', 'pathname')]
+    [
+        Output('search_type', 'options'),
+        Output('resource_classifications', 'children'),
+        Output('resource_types', 'children')
+    ],
+    [
+        Input('url', 'pathname')
+    ]
 )
 
 def search_populatetypes(pathname):
@@ -23,57 +29,43 @@ def search_populatetypes(pathname):
         """
         values = []
         cols = ['label', 'value']
-        df = db.querydatafromdatabase(sql, values, cols)
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
         
         search_options = df.to_dict('records')
-        return [search_options]
-    
-    else:
-        raise PreventUpdate
 
-@app.callback(
-    [
-        Output('resource_classifications', 'children'),
-        Output('resource_types', 'children')
-    ],
-    [Input('url', 'pathname')]
-)
-
-def home_loadclassifications(pathname):
-    if pathname == '/' or pathname == '/home':
-        sql1 = """SELECT subj_tier1_name as label, subj_tier1_ID as value FROM utilities.SubjectTier1"""
-        values1 = []
-        cols1 = ['label', 'value']
-        df1 = db.querydatafromdatabase(sql1, values1, cols1)
+        sql = """SELECT CONCAT(TO_CHAR(subj_tier1_id*100, '000'), ' ', subj_tier1_name) as label, subj_tier1_ID as value FROM utilities.SubjectTier1"""
+        values = []
+        cols = ['label', 'value']
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
         list1 = []
-        for i in df1.index:
+        for i in df.index:
             list1.append(
                 html.A(
                     [
-                        str(df1.iloc[i]['label']),
+                        str(df.iloc[i]['label']),
                         html.Br()
                     ],
-                    href = '/search?subj_tier1_id=' + str(df1.iloc[i]['value'])
+                    href = '/search?subj_tier1_id=' + str(df.iloc[i]['value'])
                 )
             )
 
-        sql2 = """SELECT resourcetype_name as label, resourcetype_ID as value FROM utilities.ResourceType"""
-        values2 = []
-        cols2 = ['label', 'value']
-        df2 = db.querydatafromdatabase(sql2, values2, cols2)
+        sql = """SELECT resourcetype_name as label, resourcetype_ID as value FROM utilities.ResourceType"""
+        values = []
+        cols = ['label', 'value']
+        df = db.querydatafromdatabase(sql, values, cols)
         list2 = []
-        for i in df2.index:
+        for i in df.index:
             list2.append(
                 html.A(
                     [
-                        str(df2.iloc[i]['label']),
+                        str(df.iloc[i]['label']),
                         html.Br()
                     ],
-                    href = '/search?resourcetype_id=' + str(df2.iloc[i]['value'])
+                    href = '/search?resourcetype_id=' + str(df.iloc[i]['value'])
                 )
             )
 
-        return [list1, list2]
+        return [search_options, list1, list2]
     else:
         raise PreventUpdate
 

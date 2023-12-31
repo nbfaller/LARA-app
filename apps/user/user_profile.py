@@ -25,7 +25,7 @@ import hashlib
     ],
     [
         State('url', 'search'),
-        State('currentuserid', 'value')
+        State('currentuserid', 'data')
     ]
 )
 
@@ -106,6 +106,7 @@ def view_populatevalues (pathname, mode, user_id):
     if pathname == '/user/profile':
         if mode == 'view':
             if user_id:
+                #print(user_id)
                 sql = """SELECT u_t.usertype_name AS type, u.usertype_id AS usertype, u.user_lname AS lname, u.user_fname AS fname, u.user_mname AS mname,
                 u.user_username AS username, u.user_birthdate AS birthdate, u_as.assignedsex_code AS assignedsex,
                 u.user_contactnum AS contactnum, u.user_email AS email,
@@ -134,10 +135,10 @@ def view_populatevalues (pathname, mode, user_id):
                     if df['livedname'][0]: fname = df['livedname'][0]
                     else: fname = df['fname'][0]
                     header = [
-                        html.P(
+                        dbc.Badge(
                             [
                                 '%s • %s' % (df['type'][0], df['username'][0])
-                            ], className = 'badge'
+                            ], color = 'primary', className = 'mb-1'
                         ),
                         html.H1("%s, %s %s" % (df['lname'][0], fname, mname))
                     ]
@@ -1417,6 +1418,7 @@ def registration(btn, password, confirm,
 
 layout = html.Div(
     [
+        dcc.Store(id = 'newauthors', data = 1),
         dbc.Row(
             [
                 cm.sidebar,
@@ -1690,7 +1692,8 @@ layout = html.Div(
                                                     dcc.DatePickerSingle(
                                                         id = 'user_birthdate',
                                                         placeholder = 'MM/DD/YYYY',
-                                                        month_format = 'MMM Do, YYYY'
+                                                        month_format = 'MMM Do, YYYY',
+                                                        clearable = True
                                                     ), width = 3
                                                 ),
                                                 dbc.Label ("Sex assigned at birth", width = 3),

@@ -12,55 +12,19 @@ from apps import dbconnect as db
 
 import hashlib
 
-# Callback for generating call number
-@app.callback(
-    [
-        Output('call_num', 'value')
-    ],
-    [
-        Input('url', 'pathname'),
-        Input('subj_tier1_id', 'value'),
-        Input('subj_tier2_id', 'value'),
-        Input('subj_tier3_id', 'value'),
-        Input('resource_authors', 'value'),
-        Input('new_authors', 'value'),
-        Input('copyright_date', 'date')
-    ]
-)
-
-def generate_callnum(pathname, t1, t2, t3, res_authors, new_authors, date):
-    if pathname == '/resource/catalog':
-        L1 = 'AAA'
-        L2 = 'BBBB'
-        L3 = 'YYYY'
-        if t1 != None and t1 >= 0:
-            L1 = str(t1*100).zfill(3)
-            if t2 != None and t2 >= 0:
-                L1 = str(t1*100 + t2*10).zfill(3)
-                if t3 != None and t3 >= 0:
-                    L1 = str(t1*100 + t2*10 + t3).zfill(3)
-        if res_authors or new_authors:
-            authors = []
-            if res_authors: print(res_authors)
-            if new_authors:
-                #print(new_authors.split(";"))
-                None
-        if date:
-            L3 = date.split("-")[0]
-        if L1 != 'AAA' or L2 != 'BBBB' or L3 != 'YYYY':
-            return["%s-%s-%s" % (L1, L2, L3)]
-        else: return [None]
-    else: raise PreventUpdate
-
 # Callback for populating dropdown menus
 @app.callback(
     [
         Output('resourcetype_id', 'options'),
         Output('subj_tier1_id', 'options'),
-        Output('resource_authors', 'options')
+        Output('resource_authors', 'options'),
+        Output('language_id', 'options'),
+        Output('publisher_id', 'options')
     ],
     [
-        Input('url', 'pathname')
+        Input('url', 'pathname'),
+        Input('newauthor_btn', 'n_clicks'),
+        Input('newpublisher_btn', 'n_clicks')
     ],
     #[
     #    Input('page_mode', 'data'),
@@ -68,7 +32,7 @@ def generate_callnum(pathname, t1, t2, t3, res_authors, new_authors, date):
     #]
 )
 
-def populate_dropdowns(pathname):
+def populate_dropdowns(pathname, author_btn, publisher_btn):
     if pathname == '/resource/catalog':
         # Resource types
         sql = """SELECT resourcetype_name as label, resourcetype_id as value
@@ -91,9 +55,25 @@ def populate_dropdowns(pathname):
             FROM resourceblock.authors;"""
         values = []
         cols = ['label', 'value']
-        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['label'])
         authors = df.to_dict('records')
-        return [resourcetype, subjecttier1, authors]
+
+        # Languages
+        sql = """SELECT language_name as label, language_id as value
+            FROM utilities.languages;"""
+        values = []
+        cols = ['label', 'value']
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
+        languages = df.to_dict('records')
+
+        # Publishers
+        sql = """SELECT CONCAT(publisher_name, ' (', publisher_loc, ')') as label, publisher_id as value
+            FROM resourceblock.publishers;"""
+        values = []
+        cols = ['label', 'value']
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['label'])
+        publishers = df.to_dict('records')
+        return [resourcetype, subjecttier1, authors, languages, publishers]
     else: raise PreventUpdate
 
 # Callback for populating Level 2 class
@@ -156,6 +136,166 @@ def populate_subjecttier3(pathname, t1, t2):
         return [options, None, disabled]
     else: raise PreventUpdate
 
+# Callback for generating call number
+@app.callback(
+    [
+        Output('call_num', 'value')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('subj_tier1_id', 'value'),
+        Input('subj_tier2_id', 'value'),
+        Input('subj_tier3_id', 'value'),
+        Input('resource_authors', 'value'),
+        Input('copyright_date', 'date')
+    ]
+)
+
+def generate_callnum(pathname, t1, t2, t3, res_authors, date):
+    if pathname == '/resource/catalog':
+        L1 = 'AAA'
+        L2 = 'BBBB'
+        L3 = 'YYYY'
+        if t1 != None and t1 >= 0:
+            L1 = str(t1*100).zfill(3)
+            if t2 != None and t2 >= 0:
+                L1 = str(t1*100 + t2*10).zfill(3)
+                if t3 != None and t3 >= 0:
+                    L1 = str(t1*100 + t2*10 + t3).zfill(3)
+        if res_authors:
+            authors = []
+            if res_authors:
+                #print(res_authors)
+                None
+        if date:
+            L3 = date.split("-")[0]
+        if L1 != 'AAA' or L2 != 'BBBB' or L3 != 'YYYY':
+            return["%s-%s-%s" % (L1, L2, L3)]
+        else: return [None]
+    else: raise PreventUpdate
+
+# Callback for registering new author
+@app.callback(
+    [
+        Output('newauthor_alert', 'children'),
+        Output('newauthor_alert', 'color'),
+        Output('newauthor_alert', 'is_open'),
+        Output('author_lname', 'value'),
+        Output('author_fname', 'value'),
+        Output('author_mname', 'value'),
+        #Output('resource_authors', 'value'),
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('newauthor_btn', 'n_clicks')
+    ],
+    [
+        State('author_lname', 'value'),
+        State('author_fname', 'value'),
+        State('author_mname', 'value'),
+        #State('resource_authors', 'value'),
+    ]
+)
+
+def register_author(pathname, btn, lname, fname, mname):
+    if pathname == '/resource/catalog':
+        ctx = dash.callback_context
+        if ctx.triggered:
+            eventid = ctx.triggered[0]['prop_id'].split('.')[0]
+            if eventid == 'newauthor_btn' and btn:
+                if lname == '' or lname == None: lname = None
+                if fname == '' or fname == None: fname = None
+                if mname == '' or mname == None: mname = None
+                alert_text = ''
+                alert_color = ''
+                alert_open = True
+                if lname and fname:
+                    sql = """SELECT author_id AS id
+                        FROM resourceblock.authors
+                        WHERE author_lname = %s AND author_fname = %s AND author_mname = %s;"""
+                    values = [lname, fname, mname]
+                    cols = ['id']
+                    df = db.querydatafromdatabase(sql, values, cols)
+                    print(sql)
+                    print(df)
+                    if not df.empty:
+                        alert_text = "This author already exists. Please select them in the dropdown menu above."
+                        alert_color = 'danger'
+                    else:
+                        sql = """INSERT INTO resourceblock.authors(author_lname, author_fname, author_mname)
+                            VALUES(%s, %s, %s);"""
+                        values = [lname, fname, mname]
+                        db.modifydatabase(sql, values)
+                        alert_text = "New author successfully registered. Please select them in the dropdown menu above."
+                        alert_color = 'success'
+                        lname = None
+                        fname = None
+                        mname = None
+                else:
+                    if lname == None or lname == '': alert_text = "Please input the author's last name."
+                    if fname == None or fname == '': alert_text = "Please input the author's first name."
+                    if (lname == None or lname == '') and (fname == None or fname == ''): alert_text = "Please input the author's first and last names."
+                    alert_color = 'warning'
+                return [alert_text, alert_color, alert_open, lname, fname, mname]
+        else: raise PreventUpdate
+    else: raise PreventUpdate
+
+# Callback for registering new publisher
+@app.callback(
+    [
+        Output('newpublisher_alert', 'children'),
+        Output('newpublisher_alert', 'color'),
+        Output('newpublisher_alert', 'is_open')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('newpublisher_btn', 'n_clicks')
+    ],
+    [
+        State('publisher_name', 'value'),
+        State('publisher_loc', 'value')
+    ]
+)
+
+def register_author(pathname, btn, name, loc):
+    if pathname == '/resource/catalog':
+        ctx = dash.callback_context
+        if ctx.triggered:
+            eventid = ctx.triggered[0]['prop_id'].split('.')[0]
+            if eventid == 'newpublisher_btn' and btn:
+                if name == '' or name == None: name = None
+                if loc == '' or loc == None: loc = None
+                alert_text = ''
+                alert_color = ''
+                alert_open = True
+                if name:
+                    sql = """SELECT publisher_id AS id
+                        FROM resourceblock.publishers
+                        WHERE publisher_name = %s AND publisher_loc = %s;"""
+                    values = [name, loc]
+                    cols = ['id']
+                    df = db.querydatafromdatabase(sql, values, cols)
+                    #print(df.empty)
+                    if not df.empty:
+                        alert_text = "This publisher already exists. Please select them in the dropdown menu above."
+                        alert_color = 'danger'
+                        #alert_open = True
+                    else:
+                        sql = """INSERT INTO resourceblock.publishers(publisher_name, publisher_loc)
+                            VALUES(%s, %s);"""
+                        values = [name, loc]
+                        db.modifydatabase(sql, values)
+                        alert_text = "New publisher successfully registered. Please select them in the dropdown menu above."
+                        alert_color = 'success'
+                        #alert_open = True
+                elif name == None or name == '':
+                    alert_text = "Please input the publisher's name."
+                    alert_color = 'warning'
+                    #alert_open = True
+                return [alert_text, alert_color, alert_open]
+        else: raise PreventUpdate
+    else: raise PreventUpdate
+
 layout = [
     dbc.Row(
         [
@@ -166,7 +306,12 @@ layout = [
                     html.Hr(),
                     dbc.Form(
                         [
-                            dbc.Alert(id = 'register_alert', is_open = False),
+                            dbc.Alert(
+                                id = 'register_alert',
+                                is_open = False,
+                                dismissable = True,
+                                duration = 5000
+                                ),
                             dbc.Row(
                                 [
                                     dbc.Label("Call number", width = 2),
@@ -181,7 +326,8 @@ layout = [
                                     dbc.Label("Resource type", width = 3),
                                     dbc.Col(
                                         dcc.Dropdown(
-                                            id = 'resourcetype_id'
+                                            id = 'resourcetype_id',
+                                            placeholder = 'Select resource type...'
                                         ), width = 3
                                     )
                                 ], className = 'mb-3'
@@ -198,16 +344,8 @@ layout = [
                                     id = 'resourcetitle_alert',
                                     color = 'danger',
                                     dismissable = True,
-                                    is_open = False
-                                ), width = 11
-                            ),
-                            dbc.Col(
-                                dbc.Alert(
-                                    "This resource already exists.",
-                                    id = 'resourcetitle_alert',
-                                    color = 'danger',
-                                    dismissable = True,
-                                    is_open = False
+                                    is_open = False,
+                                    duration = 5000
                                 ), width = 11
                             ),
                             dbc.Row(
@@ -245,28 +383,54 @@ layout = [
                             ),
                             dbc.Col(
                                 html.P(
-                                    [
-                                        """If the authors of this resource are not found above, you can register them here. Write surnames first, followed by first names,
-                                        and then middle names (if any) coming in last (e.g. """,
-                                        html.B('"Aguinaldo, Emilio, Famy"'), ", ", html.B('"Aquino, Maria Corazon, Cojuangco'), ", or ", html.B('"Osmeña, Sergio"'),
-                                        """). Separate different authors by semicolon (e.g. """,
-                                        html.B('"Aguinaldo, Emilio, Famy; Aquino, Maria Corazon, Cojuangco; Osmeña, Sergio"'),
-                                        """)."""
-                                    ]
+                                    ["""If the authors of this resource are not found above, you can register them here first."""]
                                 ),
                                 width = 11
                             ),
                             dbc.Row(
                                 [
-                                    #dbc.Label("Title name", width = 2),
+                                    #dbc.Label("Author name", width = 2),
                                     dbc.Col(
                                         dbc.Input(
                                             type = 'text',
-                                            id = 'new_authors',
-                                            placeholder = 'Example: de los Santos, María Clara, Alba; Eibarramendia, Juan Crisóstomo, Magsalin'
-                                        ), width = 11 #9
+                                            id = 'author_lname',
+                                            placeholder = 'Surname'
+                                        ), width = 3 #9
                                     ),
+                                    dbc.Col(
+                                        dbc.Input(
+                                            type = 'text',
+                                            id = 'author_fname',
+                                            placeholder = 'First name'
+                                        ), width = 3 #9
+                                    ),
+                                    dbc.Col(
+                                        dbc.Input(
+                                            type = 'text',
+                                            id = 'author_mname',
+                                            placeholder = 'Middle name'
+                                        ), width = 3 #9
+                                    ),
+                                    dbc.Col(
+                                        dbc.Button(
+                                            "Register",
+                                            id = 'newauthor_btn',
+                                            style = {'width' : '100%'}
+                                        ), width = 2
+                                    )
                                 ], className = 'mb-3'
+                            ),
+                            dbc.Row(
+                                dbc.Col(
+                                    dbc.Alert(
+                                        id = 'newauthor_alert',
+                                        is_open = False,
+                                        dismissable = True,
+                                        duration = 5000
+                                    ),
+                                    width = 11
+                                ),
+                                className = 'mb-3'
                             ),
                             #html.Hr(),
                             html.H5("Subject class"),
@@ -353,7 +517,101 @@ layout = [
                                         """,
                                         target = 'copyright_date_label'
                                     ),
+                                    dbc.Label(
+                                        "Edition number",
+                                        width = 3),
+                                    dbc.Col(
+                                        dbc.Input(
+                                            type = 'text',
+                                            id = 'resource_edition',
+                                            placeholder = 'Example: 1, 2, 3',
+                                        ), width = 3
+                                    ),
                                 ], className = 'mb-3'
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Label(
+                                        "Language",
+                                        width = 2),
+                                    dbc.Col(
+                                        dcc.Dropdown(
+                                            id = 'language_id',
+                                            placeholder = 'Select language...'
+                                        ), width = 3
+                                    ),
+                                    dbc.Label(
+                                        "Collection",
+                                        width = 3),
+                                    dbc.Col(
+                                        dcc.Dropdown(
+                                            id = 'collection_id',
+                                            placeholder = 'Select collection...'
+                                        ), width = 3
+                                    ),
+                                ], className = 'mb-3'
+                            ),
+                            html.H5("Publisher"),
+                            dbc.Col(
+                                html.P(
+                                    """If the publisher of this resource is already registered in LÁRA,
+                                    you can select them in the dropdown menu below."""
+                                ),
+                                width = 11
+                            ),
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        dcc.Dropdown(
+                                            id = 'publisher_id',
+                                            placeholder = 'Publisher',
+                                        ), width = 11 #9
+                                    ),
+                                ], className = 'mb-3'
+                            ),
+                            dbc.Col(
+                                html.P(
+                                    ["""If the publisher of this resource is not found above, you can register them here first."""]
+                                ),
+                                width = 11
+                            ),
+                            dbc.Row(
+                                [
+                                    #dbc.Label("Publisher information", width = 2),
+                                    dbc.Col(
+                                        dbc.Input(
+                                            type = 'text',
+                                            id = 'publisher_name',
+                                            placeholder = 'Publisher name'
+                                        ), width = 6 #9
+                                    ),
+                                    dbc.Col(
+                                        dbc.Input(
+                                            type = 'text',
+                                            id = 'publisher_loc',
+                                            placeholder = 'Publisher city/state/country'
+                                        ), width = 3 #9
+                                    ),
+                                    dbc.Col(
+                                        dbc.Button(
+                                            "Register",
+                                            id = 'newpublisher_btn',
+                                            style = {'width' : '100%'}
+                                        ), width = 2
+                                    )
+                                ], className = 'mb-3'
+                            ),
+                            dbc.Row(
+                                dbc.Col(
+                                    dbc.Alert(
+                                        id = 'newpublisher_alert',
+                                        is_open = False,
+                                        dismissable = True,
+                                        duration = 5000
+                                    ),
+                                    width = 11
+                                ),
+                                className = 'mb-3'
                             ),
                         ],
                         id = 'resource_catalog'

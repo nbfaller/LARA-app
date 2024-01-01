@@ -1418,7 +1418,6 @@ def registration(btn, password, confirm,
 
 layout = html.Div(
     [
-        dcc.Store(id = 'newauthors', data = 1),
         dbc.Row(
             [
                 cm.sidebar,

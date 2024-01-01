@@ -37,24 +37,31 @@ layout = [
             ),
             html.H4("""
                     LÁRA an ngaran san Library Access & Resources Administration System san Northwest Samar State University (NwSSU).
-                    Ginlalára sini nga sistema an durodilain nga mga proseso sa library sa uusa nga web-based information system.
+                    Ginlalára sini nga sistema an durodilain nga mga proseso san library sa uusa nga web-based information system.
                     Pinaagi san LÁRA, napadali na an pag-catalog, pagbibiling, ug paghuhuram san mga libro.
                 """
             ), html.Br(),
-            html.P("""
-                LÁRA is the Library Access & Resources Administration System of the Northwest Samar State University (NwSSU).
-                Named after the Waray word for “weave,” LÁRA is designed to weave different library processes together into a unified
-                web-based information system. Book cataloging, searching, and borrowing have never been easier.
-            """),
+            html.P(
+                [
+                    """LÁRA is the Library Access & Resources Administration System of the Northwest Samar State University (NwSSU).
+                    It is based on """,
+                    html.A(html.B("TUKLAS"), href = 'https://tuklas.up.edu.ph'),
+                    """, the resource discovery tool of the University of the Philippines (which is itself based on VuFind, an
+                    open-source software). Named after the Waray word for “weave,” LÁRA is designed to weave different library
+                    processes together into a unified web-based information system. Book cataloging, searching, and borrowing
+                    have never been easier."""
+                ]
+            ),
             html.P(
                 """• • •""",
                 style = {'text-align' : 'center'}
             ),
+            html.H4("The Development Team"),
             html.P(
                 [
                     "LÁRA is a project in IE 171 and 172 (Information Systems I and II) by BS Industrial Engineering students at the ",
-                    html.A("Industrial Engineering and Operations Research Department (IEORD)", href = 'https://ieor.engg.upd.edu.ph'),
-                    " of University of the Philippines College of Engineering. The project team is composed of:"
+                    html.A(html.B("Industrial Engineering and Operations Research Department (IEORD)"), href = 'https://ieor.engg.upd.edu.ph'),
+                    " of the University of the Philippines College of Engineering in Diliman, Quezon City. The project team is composed of:"
                 ]
             ),
             dbc.Row(

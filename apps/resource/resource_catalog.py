@@ -20,7 +20,8 @@ import hashlib
         Output('resource_authors', 'options'),
         Output('language_id', 'options'),
         Output('publisher_id', 'options'),
-        Output('collection_id', 'options')
+        Output('collection_id', 'options'),
+        Output('library_id', 'options')
     ],
     [
         Input('url', 'pathname'),
@@ -82,7 +83,15 @@ def populate_dropdowns(pathname, author_btn, publisher_btn):
         cols = ['label', 'value']
         df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['label'])
         collections = df.to_dict('records')
-        return [resourcetype, subjecttier1, authors, languages, publishers, collections]
+
+        # Libraries
+        sql = """SELECT library_name as label, library_id as value
+            FROM utilities.libraries;"""
+        values = []
+        cols = ['label', 'value']
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
+        libraries = df.to_dict('records')
+        return [resourcetype, subjecttier1, authors, languages, publishers, collections, libraries]
     else: raise PreventUpdate
 
 # Callback for populating Level 2 class
@@ -333,6 +342,194 @@ def set_maxpertype(pathname, copies, t2, t3):
         return [max2, max3, t2, t3, t1]
     else: raise PreventUpdate
 
+# Callback for confirming details
+@app.callback(
+    [
+        Output('catalog_alert', 'color'),
+        Output('catalog_alert', 'children'),
+        Output('catalog_alert', 'is_open'),
+        Output('catalog_modalbody', 'children'),
+        Output('catalog_confirmationmodal', 'is_open')
+    ],
+    [
+        Input('catalog_btn', 'n_clicks')
+    ],
+    [
+        # Required values in resourceblock.resourcetitles
+        State('call_num', 'value'),
+        State('resource_title', 'value'),
+        State('resource_edition', 'value'),
+        State('resourcetype_id', 'value'),
+        State('language_id', 'value'),
+        State('collection_id', 'value'),
+        State('publisher_id', 'value'),
+        State('copyright_date', 'date'),
+        State('subj_tier1_id', 'value'),
+        State('subj_tier2_id', 'value'),
+        State('subj_tier3_id', 'value'),
+        # Required values in resourceblock.resourceset
+        State('resource_volnum', 'value'),
+        State('resource_seriesnum', 'value'),
+        State('resource_isbn', 'value'),
+        State('resource_issn', 'value'),
+        State('resource_desc', 'value'),
+        State('resource_contents', 'value'),
+        # Required values in resourceblock.resourcecopy
+        State('copies_total', 'value'),
+        State('copies_type1', 'value'),
+        State('copies_type2', 'value'),
+        State('copies_type3', 'value'),
+        State('library_id', 'value'),
+        # Required values in resourceblock.resourceauthors
+        State('resource_authors', 'value'),
+    ]
+)
+
+def confirmation(btn, callnum, title, ed, type, lang, collect,
+                 pub, date, subjt1, subjt2, subjt3, vol, series,
+                 isbn, issn, desc, contents, copies, copiest1,
+                 copiest2, copiest3, library, authors):
+    ctx = dash.callback_context
+    if ctx.triggered:
+        eventid = ctx.triggered[0]['prop_id'].split('.')[0]
+        if eventid == 'catalog_btn' and btn:
+            alert_color = ''
+            alert_text = ''
+            alert_open = False
+            modal_content = ''
+            modal_open = False
+
+            if (callnum == None or title == None or type == None or
+                subjt1 == None or subjt2 == None or subjt3 == None or
+                copies == None or copiest1 == None or copiest2 == None or
+                copiest3 == None or authors == None):
+                alert_color = 'warning'
+                alert_open = True
+                alert_text = 'Insufficient information. Please fill out all required fields.'
+            else:
+                modal_open = True
+
+                sql = """SELECT r_t.resourcetype_name AS type
+                FROM utilities.resourcetype AS r_t
+                WHERE r_t.resourcetype_id = %s;"""
+                values = [type]
+                cols = ['type']
+                df = db.querydatafromdatabase(sql, values, cols)
+                type = df['type'][0]
+
+                sql = """SELECT CONCAT(TO_CHAR(subj_tier1_id*100 + subj_tier2_id*10 + subj_tier3_id, '000'), ' ', subj_tier3_name) AS subj
+                FROM utilities.subjecttier3 AS t3
+                WHERE t3.subj_tier1_id = %s AND t3.subj_tier2_id = %s AND t3.subj_tier3_id = %s;"""
+                values = [subjt1, subjt2, subjt3]
+                cols = ['subj']
+                df = db.querydatafromdatabase(sql, values, cols)
+                subj = df['subj'][0]
+
+                authors_list = ''
+                for i in authors:
+                    sql = """SELECT author_lname AS lname, author_fname AS fname, author_mname AS mname
+                    FROM resourceblock.authors
+                    WHERE author_id = %s;"""
+                    values = [i]
+                    cols = ['lname', 'fname', 'mname']
+                    df = db.querydatafromdatabase(sql, values, cols)
+                    authors_list += df['lname'][0] + ", " + df['fname'][0]
+                    if df['mname'][0] == None or df['mname'][0] == '': authors_list += "; "
+                    else: authors_list += " " + df['mname'][0] + "; "
+                authors_list = authors_list[:len(authors_list) - 2]
+
+                title_optional = []
+                set_information = []
+
+                modal_content = [
+                    html.H5("🗃️ Title information"),
+                    html.B("Title: "), title, html.Br(),
+                    html.B("Authors: "), authors_list, html.Br(),
+                    html.B("Resource type: "), type, html.Br(),
+                    html.B("Call number: "), callnum, html.Br(),
+                    html.B("Subject classification: "), subj, html.Br(),
+                    html.Div(title_optional), html.Br(),
+                    html.Div(set_information),
+                    html.H5("📗 Copy information"),
+                    html.B("Total number of copies: "), copies, html.Br(),
+                    "%s for regular circulation, %s for room-use only, and %s as reserves."% (copiest1, copiest2, copiest3)
+                ]
+
+                # Optional title information
+                if ed:
+                    title_optional.append(html.B("Edition: "))
+                    title_optional.append(ed)
+                    title_optional.append(html.Br())
+                if lang:
+                    sql = """SELECT language_name AS lang
+                    FROM utilities.languages
+                    WHERE language_id = %s;"""
+                    values = [lang]
+                    cols = ['lang']
+                    df = db.querydatafromdatabase(sql, values, cols)
+                    lang = df['lang'][0]
+                    title_optional.append(html.B("Language: "))
+                    title_optional.append(lang)
+                    title_optional.append(html.Br())
+                if collect:
+                    sql = """SELECT collection_name AS collect
+                    FROM resourceblock.collections
+                    WHERE collection_id = %s;"""
+                    values = [collect]
+                    cols = ['collect']
+                    df = db.querydatafromdatabase(sql, values, cols)
+                    collect = df['collect'][0]
+                    title_optional.append(html.B("Collection: "))
+                    title_optional.append(collect)
+                    title_optional.append(html.Br())
+                if pub:
+                    sql = """SELECT CONCAT(publisher_name, ' (', publisher_loc, ')') AS pub
+                    FROM resourceblock.publishers
+                    WHERE publisher_id = %s;"""
+                    values = [pub]
+                    cols = ['pub']
+                    df = db.querydatafromdatabase(sql, values, cols)
+                    pub = df['pub'][0]
+                    title_optional.append(html.B("Publisher: "))
+                    title_optional.append(pub)
+                    title_optional.append(html.Br())
+                if date:
+                    title_optional.append(html.B("Copyright date: "))
+                    title_optional.append(date)
+                    title_optional.append(html.Br())
+                if vol or series or isbn or issn or desc or contents:
+                    set_information.append(html.H5("📚 Set information"),)
+                    if vol:
+                        set_information.append(html.B("Volume number: "))
+                        set_information.append(vol)
+                        set_information.append(html.Br())
+                    if series:
+                        set_information.append(html.B("Series number: "))
+                        set_information.append(series)
+                        set_information.append(html.Br())
+                    if isbn:
+                        set_information.append(html.B("ISBN: "))
+                        set_information.append(isbn)
+                        set_information.append(html.Br())
+                    if issn:
+                        set_information.append(html.B("ISSN: "))
+                        set_information.append(issn)
+                        set_information.append(html.Br())
+                    if desc:
+                        set_information.append(html.B("Description: "))
+                        set_information.append(html.Br())
+                        set_information.append(desc)
+                        set_information.append(html.Br())
+                    if contents:
+                        set_information.append(html.B("Table of contents: "))
+                        set_information.append(html.Br())
+                        set_information.append(contents)
+                        set_information.append(html.Br())
+                    set_information.append(html.Br())
+            return [alert_color, alert_text, alert_open, modal_content, modal_open]
+        else: raise PreventUpdate
+    else: raise PreventUpdate
+
 layout = [
     dbc.Row(
         [
@@ -346,7 +543,7 @@ layout = [
                             html.Div(
                                 [
                                     dbc.Alert(
-                                        id = 'register_alert',
+                                        id = 'catalog_alert',
                                         is_open = False,
                                         dismissable = True,
                                         duration = 5000
@@ -754,14 +951,22 @@ layout = [
                                 [
                                     html.H3("Copy Information"),
                                     dbc.Col(
-                                        html.P("""Set the number of copies (and circulation types of each copy) below.
+                                        html.P("""Set the number of copies (and circulation types of each copy) for your library below.
                                                Unclassified copies are automatically set for regular circulation.
                                                Accession numbers for each copy are automatically generated."""),
                                         width = 11
                                     ),
                                     dbc.Row(
                                         [
-                                            dbc.Label("Total copies", width = 1),
+                                            dbc.Col(
+                                                [
+                                                    dcc.Dropdown(
+                                                        id = 'library_id',
+                                                        placeholder = 'Select library...'
+                                                    ),
+                                                    dbc.FormText("Library"),
+                                                ], width = 5
+                                            ),
                                             dbc.Col(
                                                 [
                                                     dbc.Input(
@@ -770,8 +975,8 @@ layout = [
                                                         min = 1,
                                                         value = 1
                                                     ),
-                                                    dbc.FormText("Total number of copies"),
-                                                ], width = 2 #9
+                                                    dbc.FormText("Total number"),
+                                                ], width = 1 #9
                                             ),
                                             dbc.Label("Copies per classification type", width = 2),
                                             dbc.Col(
@@ -783,7 +988,7 @@ layout = [
                                                         value = 0
                                                     ),
                                                     dbc.FormText("Room-use only"),
-                                                ], width = 2 #9
+                                                ], width = 1 #9
                                             ),
                                             dbc.Col(
                                                 [
@@ -794,7 +999,7 @@ layout = [
                                                         value = 0
                                                     ),
                                                     dbc.FormText("Reserve books"),
-                                                ], width = 2 #9
+                                                ], width = 1 #9
                                             ),
                                             dbc.Col(
                                                 [
@@ -806,7 +1011,7 @@ layout = [
                                                         disabled = True
                                                     ),
                                                     dbc.FormText("Regular circulation"),
-                                                ], width = 2 #9
+                                                ], width = 1 #9
                                             ),
                                         ], className = 'mb-3'
                                     )
@@ -825,5 +1030,29 @@ layout = [
                 ]
             )
         ]
+    ),
+    dbc.Modal(
+        [
+            dbc.ModalHeader(html.H4('Confirm details')),
+            dbc.ModalBody(
+                [
+                    html.Div(id = 'catalog_modalbody'),
+                    html.Hr(),
+                    dbc.Alert(id = 'confirm_alert', is_open = False),
+                    html.H6("To catalog this resource, please enter your password."),
+                    dbc.Row(
+                        dbc.Col(
+                            dbc.Input(type = 'password', id = 'user_password', placeholder = 'Password')
+                        ), className = 'mb-3'
+                    )
+                ]
+            ),
+            dbc.ModalFooter(
+                dbc.Button("Confirm", id = 'confirm_btn')
+            )
+        ],
+        centered = True,
+        id = 'catalog_confirmationmodal',
+        backdrop = 'static'
     )
 ]

@@ -102,7 +102,7 @@ layout = [
                             dbc.Card(
                                 [
                                     dbc.CardImg(
-                                        src="/assets/users/student-18-SJ00001-efaguinaldo.jpg",
+                                        src="/assets/users/default.jpg",
                                     ),
                                     dbc.CardBody(
                                         [
@@ -121,7 +121,7 @@ layout = [
                             dbc.Card(
                                 [
                                     dbc.CardImg(
-                                        src="/assets/users/student-18-SJ00001-efaguinaldo.jpg",
+                                        src="/assets/users/default.jpg",
                                     ),
                                     dbc.CardBody(
                                         [
@@ -140,7 +140,7 @@ layout = [
                             dbc.Card(
                                 [
                                     dbc.CardImg(
-                                        src="/assets/users/student-18-SJ00001-efaguinaldo.jpg",
+                                        src="/assets/users/default.jpg",
                                     ),
                                     dbc.CardBody(
                                         [

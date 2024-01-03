@@ -752,7 +752,8 @@ layout = [
                                                     id = 'copyright_date',
                                                     placeholder = 'MM/DD/YYYY',
                                                     month_format = 'MMM Do, YYYY',
-                                                    clearable = True
+                                                    clearable = True,
+                                                    style = {'width' : '100%'}
                                                 ), width = 3
                                             ),
                                             dbc.Tooltip(

@@ -1691,7 +1691,8 @@ layout = html.Div(
                                                         id = 'user_birthdate',
                                                         placeholder = 'MM/DD/YYYY',
                                                         month_format = 'MMM Do, YYYY',
-                                                        clearable = True
+                                                        clearable = True,
+                                                        style = {'width' : '100%'}
                                                     ), width = 3
                                                 ),
                                                 dbc.Label ("Sex assigned at birth", width = 3),

@@ -125,7 +125,8 @@ layout = html.Div(
                                 placeholder = "Search here"
                             ),
                             width = 7,
-                            style = {'min-width' : '300px'}
+                            className = 'mb-3',
+                            style = {'min-width' : '400px'}
                         ),
                         dbc.Col(
                             dcc.Dropdown(
@@ -133,6 +134,7 @@ layout = html.Div(
                                 placeholder = "Search by"
                             ),
                             width = 3,
+                            className = 'mb-3',
                             style = {'min-width' : '150px'}
                         ),
                         dbc.Col(
@@ -143,9 +145,12 @@ layout = html.Div(
                                 style = {'width' : '100%'}
                             ),
                             width = 2,
+                            className = 'mb-3',
                             style = {'min-width' : '150px'}
                         ),
                     ],
+                    align = 'center',
+                    justify = 'center'
                 ),
                 #dbc.Col(
                 #    "Advanced search",
@@ -169,7 +174,8 @@ layout = html.Div(
                         html.Div(id = 'resource_classifications')
                     ],
                     width = "auto",
-                    style = {'max-width' : '400px'}
+                    className = 'mb-3',
+                    #style = {'max-width' : '400px'}
                 ),
                 dbc.Col(
                     [
@@ -177,9 +183,12 @@ layout = html.Div(
                         html.Div(id = 'resource_types')
                     ],
                     width = "auto",
-                    style = {'max-width' : '400px'}
+                    className = 'mb-3',
+                    #style = {'max-width' : '400px'}
                 )
-            ], align = "center", justify = "center",
+            ],
+            align = "center",
+            justify = "center",
             style = {
                 'margin-top' : '3em',
                 #'padding-top' : '-1em'

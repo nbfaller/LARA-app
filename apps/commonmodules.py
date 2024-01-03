@@ -80,7 +80,8 @@ sidebar = dbc.Col(
         #'border-right' : '1px solid #ebe8e2',
         #'position' : 'sticky',
         'margin-right' : '2em',
-        'padding' : '1.5em'
+        'padding' : '1.5em',
+        #'min-width' : '250px'
     }
 )
 
@@ -311,7 +312,8 @@ footer = html.Footer(
                             href = "https://nwssu.edu.ph"
                         )
                     ],
-                    width = "auto"
+                    width = "auto",
+                    className = 'mb-3'
                 ),
                 dbc.Col(
                     [

@@ -114,39 +114,38 @@ layout = html.Div(
                 'overflow' : 'hidden'
             }
         ),
-        dbc.Row(
+        dbc.Form(
             [
-                dbc.Col(
-                    dbc.Form(
-                        [
-                            dbc.Row(
-                                [
-                                    dbc.Col(
-                                        dbc.Input(
-                                            type = 'text',
-                                            id = 'search_input',
-                                            placeholder = "Search here"
-                                        ), width = 9
-                                    ),
-                                    dbc.Col(
-                                        dcc.Dropdown(
-                                            id = 'search_type',
-                                            placeholder = "Search by"
-                                        )
-                                    )
-                                ]
-                            )
-                        ]
-                    )
-                ),
-                dbc.Col(
-                    dbc.Button(
-                        '🔎 Search',
-                        id = 'search_submit',
-                        n_clicks = 0,
-                        style = {'width' : '100%'}
-                    ),
-                    width = 2
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            dbc.Input(
+                                type = 'text',
+                                id = 'search_input',
+                                placeholder = "Search here"
+                            ),
+                            width = 7,
+                            style = {'min-width' : '300px'}
+                        ),
+                        dbc.Col(
+                            dcc.Dropdown(
+                                id = 'search_type',
+                                placeholder = "Search by"
+                            ),
+                            width = 3,
+                            style = {'min-width' : '150px'}
+                        ),
+                        dbc.Col(
+                            dbc.Button(
+                                '🔎 Search',
+                                id = 'search_submit',
+                                n_clicks = 0,
+                                style = {'width' : '100%'}
+                            ),
+                            width = 2,
+                            style = {'min-width' : '150px'}
+                        ),
+                    ],
                 ),
                 #dbc.Col(
                 #    "Advanced search",
@@ -157,8 +156,9 @@ layout = html.Div(
                 'position' : 'relative',
                 'z-index' : '2',
                 'margin-top' : '3em',
-                'margin-left' : '10em',
-                'margin-right' : '10em'
+                'margin-left' : '15em',
+                'margin-right' : '15em',
+                #'align-content' : 'center'
             },
         ),
         dbc.Row(
@@ -167,13 +167,17 @@ layout = html.Div(
                     [
                         html.H3('Browse by classification'),
                         html.Div(id = 'resource_classifications')
-                    ], width = "auto"
+                    ],
+                    width = "auto",
+                    style = {'max-width' : '400px'}
                 ),
                 dbc.Col(
                     [
                         html.H3('Browse by resource type'),
                         html.Div(id = 'resource_types')
-                    ], width = "auto"
+                    ],
+                    width = "auto",
+                    style = {'max-width' : '400px'}
                 )
             ], align = "center", justify = "center",
             style = {

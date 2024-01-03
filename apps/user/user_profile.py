@@ -1700,6 +1700,14 @@ layout = html.Div(
                                                 )
                                             ], className = 'mb-3'
                                         ),
+                                        html.H5("Contact information"),
+                                        dbc.Col(
+                                            [
+                                                html.P("""Please input the contact number and email that you frequently
+                                                       use. Supplying your NwSSU email is encouraged.""")
+                                            ],
+                                            width = 11
+                                        ),
                                         dbc.Row(
                                             [
                                                 dbc.Label ("Contact number", width = 2),
@@ -1713,7 +1721,7 @@ layout = html.Div(
                                                 dbc.Label ("Email address", width = 3, id = 'user_email_label'),
                                                 dbc.Col(
                                                     dbc.Input(
-                                                        type = 'text',
+                                                        type = 'email',
                                                         id = 'user_email',
                                                         placeholder = 'example@nwssu.edu.ph'
                                                     ), width = 3

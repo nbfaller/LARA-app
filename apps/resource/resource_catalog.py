@@ -438,6 +438,14 @@ def confirmation(btn, callnum, title, ed, type, lang, collect,
                     else: authors_list += " " + df['mname'][0] + "; "
                 authors_list = authors_list[:len(authors_list) - 2]
 
+                sql = """SELECT library_name AS library
+                FROM utilities.libraries
+                WHERE library_id = %s;"""
+                values = [library]
+                cols = ['library']
+                df = db.querydatafromdatabase(sql, values, cols)
+                library = df['library'][0]
+
                 title_optional = []
                 set_information = []
 
@@ -451,6 +459,7 @@ def confirmation(btn, callnum, title, ed, type, lang, collect,
                     html.Div(title_optional), html.Br(),
                     html.Div(set_information),
                     html.H5("📗 Copy information"),
+                    html.B("Library: "), library, html.Br(),
                     html.B("Total number of copies: "), copies, html.Br(),
                     "%s for regular circulation, %s for room-use only, and %s as reserves."% (copiest1, copiest2, copiest3)
                 ]
@@ -758,7 +767,8 @@ layout = [
                                                 width = 3),
                                             dbc.Col(
                                                 dbc.Input(
-                                                    type = 'text',
+                                                    type = 'number',
+                                                    min = 0,
                                                     id = 'resource_edition',
                                                     placeholder = 'Example: 1, 2, 3',
                                                 ), width = 3
@@ -868,7 +878,8 @@ layout = [
                                             ),
                                             dbc.Col(
                                                 dbc.Input(
-                                                    type = 'text',
+                                                    type = 'number',
+                                                    min = 0,
                                                     id = 'resource_volnum',
                                                     placeholder = 'Volume number'
                                                 ), width = 3 #9
@@ -879,7 +890,8 @@ layout = [
                                             ),
                                             dbc.Col(
                                                 dbc.Input(
-                                                    type = 'text',
+                                                    type = 'number',
+                                                    min = 0,
                                                     id = 'resource_seriesnum',
                                                     placeholder = 'Series number'
                                                 ), width = 3 #9
@@ -1038,7 +1050,11 @@ layout = [
                 [
                     html.Div(id = 'catalog_modalbody'),
                     html.Hr(),
-                    dbc.Alert(id = 'confirm_alert', is_open = False),
+                    dbc.Alert(
+                        id = 'confirm_alert',
+                        is_open = False,
+                        dismissable = True,
+                        duration = 5000),
                     html.H6("To catalog this resource, please enter your password."),
                     dbc.Row(
                         dbc.Col(

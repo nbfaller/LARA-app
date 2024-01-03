@@ -98,6 +98,8 @@ layout = html.Div(
                     src=app.get_asset_url('banner.jpg'),
                     style = {
                         'height' : '30em',
+                        'width' : '100%',
+                        'object-fit' : 'cover',
                         'z-index' : '-1',
                         'mask-image' : 'linear-gradient(to bottom, rgba(0, 0, 0, 1.0) 50%, transparent 100%)'
                     }

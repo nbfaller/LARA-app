@@ -140,14 +140,26 @@ layout = [
                             dbc.Card(
                                 [
                                     dbc.CardImg(
-                                        src="/assets/users/default.jpg",
+                                        src="/assets/team/nams.jpg",
                                     ),
                                     dbc.CardBody(
                                         [
                                             html.H4("Naomi Takagaki"),
                                             html.P("""
-                                                Lorem ipsum dolor sit amet.
-                                            """)
+                                                Nams is the front-end developer of the project. Born and raised in Makati City,
+                                                she has a penchant for reading online novels and exploring arts and crafts.
+                                                She deeply cares for marine diversity preservation and spreading awareness for local flora.
+                                            """),
+                                            html.A(
+                                                html.Img(
+                                                    src = app.get_asset_url('icons/linkedin.png'),
+                                                    style = {
+                                                        'width' : '32px',
+                                                        #'filter' : 'invert(35%) sepia(91%) saturate(4733%) hue-rotate(153deg) brightness(93%) contrast(98%)'
+                                                    }
+                                                ),
+                                                href = 'https://www.linkedin.com/in/naomi-takagaki-4456aa266/'
+                                            )
                                         ]
                                     )
                                 ]

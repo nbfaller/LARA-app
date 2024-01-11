@@ -93,3 +93,9 @@
     background-color:#d8eafd;
     background-color:rgba(77, 186, 158, 0.25);
     color:#038b68}
+
+.VirtualizedSelectOption:focus,
+.VirtualizedSelectOption:hover,
+.VirtualizedSelectOption:active{
+    background-color:rgba(77, 186, 158, 0.25);
+}

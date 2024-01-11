@@ -94,8 +94,8 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
         ]
 
         if input:
-            sql += "AND (u.user_lname ILIKE %s OR u.user_fname ILIKE %s OR u.user_mname ILIKE %s OR u.user_id ILIKE %s) "
-            values += [f"%{input}%", f"%{input}%", f"%{input}%", f"%{input}%"]
+            sql += "AND (u.user_lname ILIKE %s OR u.user_fname ILIKE %s OR u.user_livedname ILIKE %s OR u.user_mname ILIKE %s OR u.user_id ILIKE %s) "
+            values += [f"%{input}%", f"%{input}%", f"%{input}%", f"%{input}%", f"%{input}%"]
 
         if usertype_filter:
             sql += "AND ("

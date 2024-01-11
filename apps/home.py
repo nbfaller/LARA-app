@@ -36,7 +36,7 @@ def search_populatetypes(pathname):
         sql = """SELECT CONCAT(TO_CHAR(subj_tier1_id*100, '000'), ' ', subj_tier1_name) as label, subj_tier1_ID as value FROM utilities.SubjectTier1"""
         values = []
         cols = ['label', 'value']
-        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['label'])
         list1 = []
         for i in df.index:
             list1.append(

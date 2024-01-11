@@ -39,8 +39,8 @@ app.layout = html.Div(
         dcc.Store(id='currentrole', data = 0, storage_type='session'),
 
         # Page mode and user id for viewing for those that have any
-        dcc.Store(id = 'page_mode', storage_type = 'memory'),
-        dcc.Store(id = 'view_id', storage_type = 'memory'),
+        dcc.Store(id = 'page_mode', data = -1, storage_type = 'memory'),
+        dcc.Store(id = 'view_id', data = -1, storage_type = 'memory'),
         
         cm.navbar,
         html.Div(id = 'page-content', style = CONTENT_STYLE),

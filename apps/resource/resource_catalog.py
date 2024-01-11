@@ -21,7 +21,8 @@ import hashlib
         Output('language_id', 'options'),
         Output('publisher_id', 'options'),
         Output('collection_id', 'options'),
-        Output('library_id', 'options')
+        Output('library_id', 'options'),
+        Output('existing_titles', 'options')
     ],
     [
         Input('url', 'pathname'),
@@ -91,7 +92,99 @@ def populate_dropdowns(pathname, author_btn, publisher_btn):
         cols = ['label', 'value']
         df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
         libraries = df.to_dict('records')
-        return [resourcetype, subjecttier1, authors, languages, publishers, collections, libraries]
+
+        # Existing titles
+        sql = """SELECT CONCAT(t.resource_title, ' (', p.publisher_name, ', ', EXTRACT(YEAR FROM t.copyright_date), ')') as label, title_id as value
+            FROM resourceblock.resourcetitles AS t
+            LEFT JOIN resourceblock.publishers as p ON t.publisher_id = p.publisher_id;"""
+        values = []
+        cols = ['label', 'value']
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['label'])
+        titles = df.to_dict('records')
+
+        return [resourcetype, subjecttier1, authors, languages, publishers, collections, libraries, titles]
+    else: raise PreventUpdate
+
+# Callback for disabling inputs and setting values if title is selected
+@app.callback(
+    [
+        Output('resourcetype_id', 'value'), Output('resourcetype_id', 'disabled'),
+        Output('resource_title', 'value'), Output('resource_title', 'disabled'), Output('newtitle_btn', 'disabled'),
+        Output('author_lname', 'disabled'),
+        Output('author_fname', 'disabled'),
+        Output('author_mname', 'disabled'),
+        Output('resource_authors', 'value'), Output('resource_authors', 'disabled'),
+        Output('newauthor_btn', 'disabled'),
+        Output('subj_tier1_id', 'value'), Output('subj_tier1_id', 'disabled'),
+        Output('copyright_date', 'date'), Output('copyright_date', 'disabled'),
+        Output('resource_edition', 'value'), Output('resource_edition', 'disabled'),
+        Output('language_id', 'value'), Output('language_id', 'disabled'),
+        Output('collection_id', 'value'), Output('collection_id', 'disabled'),
+        Output('publisher_id', 'value'), Output('publisher_id', 'disabled'),
+        Output('publisher_name', 'disabled'),
+        Output('publisher_loc', 'disabled'),
+        Output('newpublisher_btn', 'disabled'),
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('existing_titles', 'value')
+    ]
+)
+
+def set_existingtitle(pathname, title):
+    if pathname == '/resource/catalog':
+        if title:
+            sql = """SELECT resourcetype_id as type, resource_title as title,
+                subj_tier1_id as t1, copyright_date as date, resource_edition as ed,
+                language_id as lang, collection_id as col, publisher_id as pub
+                FROM resourceblock.resourcetitles
+                WHERE title_id = %s;"""
+            values = [title]
+            cols = ['type', 'title', 't1', 'date', 'ed', 'lang', 'col', 'pub']
+            df = db.querydatafromdatabase(sql, values, cols)
+
+            sql = """SELECT author_id as author
+                FROM resourceblock.resourceauthors
+                WHERE title_id = %s;"""
+            cols = ['author']
+            df2 = db.querydatafromdatabase(sql, values, cols)
+            authors = df2['author'].to_list()
+            return [
+                df['type'][0], True,
+                df['title'][0], True, True,
+                True,
+                True,
+                True,
+                authors, True,
+                True,
+                df['t1'][0], True,
+                df['date'][0], True,
+                df['ed'][0], True,
+                df['lang'][0], True,
+                df['col'][0], True,
+                df['pub'][0], True,
+                True,
+                True,
+                True
+            ]
+        else: return [
+            None, False,
+            None, False, False,
+            False,
+            False,
+            False,
+            None, False,
+            False,
+            None, False,
+            None, False,
+            None, False,
+            None, False,
+            None, False,
+            None, False,
+            False,
+            False,
+            False
+        ]
     else: raise PreventUpdate
 
 # Callback for populating Level 2 class
@@ -103,13 +196,15 @@ def populate_dropdowns(pathname, author_btn, publisher_btn):
     ],
     [
         Input('url', 'pathname'),
-        Input('subj_tier1_id', 'value')
+        Input('subj_tier1_id', 'value'),
+        Input('existing_titles', 'value')
     ]
 )
 
-def populate_subjecttier2(pathname, t1):
+def populate_subjecttier2(pathname, t1, title):
     if pathname == '/resource/catalog':
         options = {}
+        value = None
         disabled = True
         if t1 != None and t1 >= 0:
             sql = """SELECT
@@ -121,8 +216,16 @@ def populate_subjecttier2(pathname, t1):
             cols = ['label', 'value']
             df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
             options = df.to_dict('records')
-            disabled = False
-        return [options, None, disabled]
+            if title:
+                sql = """SELECT subj_tier2_id as value
+                    FROM resourceblock.resourcetitles
+                    WHERE title_id = %s;"""
+                values = [title]
+                cols = ['value']
+                df = db.querydatafromdatabase(sql, values, cols)
+                value = df['value'][0]
+            else: disabled = False
+        return [options, value, disabled]
     else: raise PreventUpdate
 
 # Callback for populating Level 3 class
@@ -135,13 +238,15 @@ def populate_subjecttier2(pathname, t1):
     [
         Input('url', 'pathname'),
         Input('subj_tier1_id', 'value'),
-        Input('subj_tier2_id', 'value')
+        Input('subj_tier2_id', 'value'),
+        Input('existing_titles', 'value')
     ]
 )
 
-def populate_subjecttier3(pathname, t1, t2):
+def populate_subjecttier3(pathname, t1, t2, title):
     if pathname == '/resource/catalog':
         options = {}
+        value = None
         disabled = True
         if t1 != None and t1 >= 0 and t2 != None and t2 >= 0:
             sql = """SELECT CONCAT(TO_CHAR(subj_tier1_id*100 + subj_tier2_id*10 + subj_tier3_id, '000'), ' ', subj_tier3_name) as label, subj_tier3_id as value
@@ -150,8 +255,16 @@ def populate_subjecttier3(pathname, t1, t2):
             cols = ['label', 'value']
             df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
             options = df.to_dict('records')
-            disabled = False
-        return [options, None, disabled]
+            if title:
+                sql = """SELECT subj_tier3_id as value
+                    FROM resourceblock.resourcetitles
+                    WHERE title_id = %s;"""
+                values = [title]
+                cols = ['value']
+                df = db.querydatafromdatabase(sql, values, cols)
+                value = df['value'][0]
+            else: disabled = False
+        return [options, value, disabled]
     else: raise PreventUpdate
 
 # Callback for generating call number
@@ -171,9 +284,9 @@ def populate_subjecttier3(pathname, t1, t2):
 
 def generate_callnum(pathname, t1, t2, t3, res_authors, date):
     if pathname == '/resource/catalog':
-        L1 = 'AAA'
-        L2 = 'BBBB'
-        L3 = 'YYYY'
+        L1 = '•••'
+        L2 = '••••'
+        L3 = '••••'
         if t1 != None and t1 >= 0:
             L1 = str(t1*100).zfill(3)
             if t2 != None and t2 >= 0:
@@ -181,13 +294,18 @@ def generate_callnum(pathname, t1, t2, t3, res_authors, date):
                 if t3 != None and t3 >= 0:
                     L1 = str(t1*100 + t2*10 + t3).zfill(3)
         if res_authors:
-            authors = []
-            if res_authors:
-                #print(res_authors)
-                None
+            cutternums = []
+            for i in res_authors:
+                sql = """SELECT author_cutternum as num FROM resourceblock.authors WHERE author_id = %s;"""
+                values = [i]
+                cols = ['num']
+                df = db.querydatafromdatabase(sql, values, cols)
+                cutternums.append(df['num'][0])
+            cutternums.sort()
+            L2 = cutternums[0]
         if date:
             L3 = date.split("-")[0]
-        if L1 != 'AAA' or L2 != 'BBBB' or L3 != 'YYYY':
+        if L1 != '•••' or L2 != '••••' or L3 != '••••':
             return["%s-%s-%s" % (L1, L2, L3)]
         else: return [None]
     else: raise PreventUpdate
@@ -275,7 +393,7 @@ def register_author(pathname, btn, lname, fname, mname):
     ]
 )
 
-def register_author(pathname, btn, name, loc):
+def register_publisher(pathname, btn, name, loc):
     if pathname == '/resource/catalog':
         ctx = dash.callback_context
         if ctx.triggered:
@@ -546,6 +664,64 @@ layout = [
             dbc.Col(
                 [
                     html.H1("Resource record", id = 'header'),
+                    dbc.Col(
+                        html.P(
+                            """If this title is already registered in LÁRA,
+                            you can select it in the dropdown menu below."""
+                        ),
+                        width = 11
+                    ),
+                    dbc.Row(
+                        [
+                            #dbc.Label("Title name", width = 2),
+                            dbc.Col(
+                                dcc.Dropdown(
+                                    #type = 'text',
+                                    id = 'existing_titles',
+                                    placeholder = 'Title name'
+                                ), width = 11 #9
+                            ),
+                        ], className = 'mb-3'
+                    ),
+                    dbc.Col(
+                        html.P(
+                            ["""If the title is not found above (or if you're cataloging a new edition), you can enter it below."""]
+                        ),
+                        width = 11
+                    ),
+                    dbc.Form(
+                        [
+                            dbc.Row(
+                                [
+                                    #dbc.Label("Title name", width = 2),
+                                    dbc.Col(
+                                        dbc.Input(
+                                            type = 'text',
+                                            id = 'resource_title',
+                                            placeholder = 'Title name'
+                                        ), width = 9
+                                    ),
+                                    dbc.Col(
+                                        dbc.Button(
+                                            "Register",
+                                            id = 'newtitle_btn',
+                                            style = {'width' : '100%'}
+                                        ), width = 2
+                                    )
+                                ], className = 'mb-3'
+                            ),
+                            dbc.Col(
+                                dbc.Alert(
+                                    "This title already exists.",
+                                    id = 'resourcetitle_alert',
+                                    color = 'danger',
+                                    dismissable = True,
+                                    is_open = False,
+                                    duration = 5000
+                                ), width = 11
+                            )
+                        ]
+                    ),
                     html.Hr(),
                     dbc.Form(
                         [
@@ -556,7 +732,8 @@ layout = [
                                         is_open = False,
                                         dismissable = True,
                                         duration = 5000
-                                        ),
+                                    ),
+                                    html.H3("Title Information"),
                                     dbc.Row(
                                         [
                                             dbc.Label("Call number", width = 2),
@@ -575,34 +752,6 @@ layout = [
                                                     placeholder = 'Select resource type...'
                                                 ), width = 3
                                             )
-                                        ], className = 'mb-3'
-                                    ),
-                                    html.Hr(),
-                                    html.H3("Title Information"),
-                                    dbc.Col(
-                                        html.P("""Enter the title of this resource below."""),
-                                        width = 11
-                                    ),
-                                    dbc.Col(
-                                        dbc.Alert(
-                                            "This resource already exists.",
-                                            id = 'resourcetitle_alert',
-                                            color = 'danger',
-                                            dismissable = True,
-                                            is_open = False,
-                                            duration = 5000
-                                        ), width = 11
-                                    ),
-                                    dbc.Row(
-                                        [
-                                            #dbc.Label("Title name", width = 2),
-                                            dbc.Col(
-                                                dbc.Input(
-                                                    type = 'text',
-                                                    id = 'resource_title',
-                                                    placeholder = 'Title name'
-                                                ), width = 11 #9
-                                            ),
                                         ], className = 'mb-3'
                                     ),
                                     html.H5("Author(s)"),
@@ -1069,6 +1218,7 @@ layout = [
             )
         ],
         centered = True,
+        scrollable = True,
         id = 'catalog_confirmationmodal',
         backdrop = 'static'
     )

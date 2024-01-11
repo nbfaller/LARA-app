@@ -141,19 +141,19 @@ layout = html.Div(
                                             )#, width = 7
                                         )
                                     ], className = 'mb-3'
+                                ),
+                                dbc.Row(
+                                    dbc.Button(
+                                        "Log-in",
+                                        color = 'primary',
+                                        id = 'login_loginbtn'
+                                    ),
+                                    style = {
+                                        'margin' : 'auto'
+                                    }
                                 )
                             ], className = 'align-self-center'
                         ),
-                        dbc.Row(
-                            dbc.Button(
-                                "Log-in",
-                                color = 'primary',
-                                id = 'login_loginbtn'
-                            ),
-                            style = {
-                                'margin' : 'auto'
-                            }
-                        )
                     ]
                 )
             ],

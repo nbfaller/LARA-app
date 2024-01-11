@@ -1961,6 +1961,7 @@ layout = html.Div(
                 )
             ],
             centered = True,
+            scrollable = True,
             id = 'register_confirmationmodal',
             backdrop = 'static'
         )

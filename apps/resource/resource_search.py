@@ -16,6 +16,7 @@ from apps import dbconnect as db
 
 @app.callback(
     [
+        Output('rsearch_type', 'options'),
         Output('resourcetype_filter', 'options'),
         Output('subj_tier1_filter', 'options'),
         Output('library_filter', 'options'),
@@ -28,31 +29,37 @@ from apps import dbconnect as db
 
 def populate_rdropdowns (pathname):
     if pathname == '/search' or pathname == '/resource/search':
+        sql = """SELECT searchtype_desc AS label, searchtype_id AS value FROM utilities.searchtype;"""
+        values = []
+        cols = ['label', 'value']
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
+        options1 = df.to_dict('records')
+
         sql = """SELECT resourcetype_name AS label, resourcetype_id AS value FROM utilities.resourcetype;"""
         values = []
         cols = ['label', 'value']
-        df = db.querydatafromdatabase(sql, values, cols)
-        options1 = df.to_dict('records')
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
+        options2 = df.to_dict('records')
 
         sql = """SELECT subj_tier1_name AS label, subj_tier1_id AS value FROM utilities.subjecttier1;"""
         values = []
         cols = ['label', 'value']
-        df = db.querydatafromdatabase(sql, values, cols)
-        options2 = df.to_dict('records')
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
+        options3 = df.to_dict('records')
 
         sql = """SELECT library_name AS label, library_id AS value FROM utilities.libraries;"""
         values = []
         cols = ['label', 'value']
-        df = db.querydatafromdatabase(sql, values, cols)
-        options3 = df.to_dict('records')
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
+        options4 = df.to_dict('records')
 
         sql = """SELECT language_name AS label, language_id AS value FROM utilities.languages;"""
         values = []
         cols = ['label', 'value']
-        df = db.querydatafromdatabase(sql, values, cols)
-        options4 = df.to_dict('records')
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
+        options5 = df.to_dict('records')
 
-        return [options1, options2, options3, options4]
+        return [options1, options2, options3, options4, options5]
     else: raise PreventUpdate
 
 @app.callback(
@@ -61,11 +68,14 @@ def populate_rdropdowns (pathname):
     ],
     [
         Input('url', 'pathname'),
-        Input('rsearch_input', 'value')
+        Input('rsearch_input', 'value'),
+        Input('resourcetype_filter', 'value'),
+        Input('subj_tier1_filter', 'value'),
+        Input('language_filter', 'value')
     ]
 )
 
-def generate_resourceresults (pathname, input):
+def generate_resourceresults (pathname, input, type, subj, lang):
     if pathname == '/search' or pathname == '/resource/search':
         sql = """SELECT r.title_id AS id, r.resource_title AS title, EXTRACT(YEAR FROM r.copyright_date) AS date,
         r_t.resourcetype_name AS type, r_s1.subj_tier1_name AS subj
@@ -77,8 +87,38 @@ def generate_resourceresults (pathname, input):
         cols = ['id', 'title', 'date', 'type', 'subj']
 
         if input:
-            sql += "WHERE (r.resource_title ILIKE %s)"
+            sql += "WHERE r.resource_title ILIKE %s"
             values += [f"%{input}%"]
+
+        if type:
+            sql += "AND ("
+            c = 0
+            for i in type:
+                sql += "r.resourcetype_id = %s"
+                values += [i]
+                c += 1
+                if c < len(type): sql += " OR "
+            sql += ")"
+        
+        if subj:
+            sql += "AND ("
+            c = 0
+            for i in subj:
+                sql += "r.subj_tier1_id = %s"
+                values += [i]
+                c += 1
+                if c < len(subj): sql += " OR "
+            sql += ")"
+        
+        if lang:
+            sql += "AND ("
+            c = 0
+            for i in lang:
+                sql += "r.language_id = %s"
+                values += [i]
+                c += 1
+                if c < len(lang): sql += " OR "
+            sql += ")"
         
         sql += """ORDER BY r.title_id;"""
         df = db.querydatafromdatabase(sql, values, cols)
@@ -103,15 +143,19 @@ def generate_resourceresults (pathname, input):
                             [
                                 dbc.Col(
                                     dbc.Checkbox(
-                                        label = i,
-                                        id = 'result_%s' % i
+                                        label = i+1,
+                                        id = 'rsearch_result%s' % str(i+1)
                                     ),
                                     className = 'p-3 col-md-1'
                                 ),
                                 dbc.Col(
                                     dbc.CardBody(
                                         [
-                                            dbc.Badge(df['type'][i]), html.Br(),
+                                            dbc.Badge(
+                                                df['type'][i],
+                                                className = 'mb-1',
+                                                color = 'primary'
+                                            ), html.Br(),
                                             html.A(
                                                 html.H4(df['title'][i]),
                                                 href = '/resource/record?id=%s' % df['id'][i]

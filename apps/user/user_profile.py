@@ -7,6 +7,7 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 import numpy
 from urllib.parse import urlparse, parse_qs
+#from cv2 import *
 
 from apps import commonmodules as cm
 from app import app

@@ -178,7 +178,7 @@ layout = html.Div(
                         html.H3('Browse by classification'),
                         html.Div(id = 'resource_classifications')
                     ],
-                    width = "auto",
+                    md = "auto",
                     className = 'mb-3',
                     #style = {'max-width' : '400px'}
                 ),
@@ -187,7 +187,7 @@ layout = html.Div(
                         html.H3('Browse by resource type'),
                         html.Div(id = 'resource_types')
                     ],
-                    width = "auto",
+                    md = "auto",
                     className = 'mb-3',
                     #style = {'max-width' : '400px'}
                 )

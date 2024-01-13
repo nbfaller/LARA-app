@@ -117,52 +117,57 @@ layout = html.Div(
         dbc.Form(
             [
                 dbc.Row(
-                    [
-                        dbc.Col(
-                            dbc.Input(
-                                type = 'text',
-                                id = 'search_input',
-                                placeholder = "Search here"
-                            ),
-                            width = 7,
-                            className = 'mb-3',
-                            style = {'min-width' : '400px'}
+                    dbc.Col(
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    dbc.Input(
+                                        type = 'text',
+                                        id = 'search_input',
+                                        placeholder = "Search here"
+                                    ),
+                                    lg = 6,
+                                    md = 12,
+                                    sm = 12,
+                                    className = 'mb-3'
+                                ),
+                                dbc.Col(
+                                    dcc.Dropdown(
+                                        id = 'search_type',
+                                        placeholder = "Search by"
+                                    ),
+                                    lg = 3,
+                                    md = 8,
+                                    sm = 12,
+                                    className = 'mb-3',
+                                ),
+                                dbc.Col(
+                                    dbc.Button(
+                                        '🔎 Search',
+                                        id = 'search_submit',
+                                        n_clicks = 0,
+                                        style = {'width' : '100%'}
+                                    ),
+                                    lg = 3,
+                                    md = 4,
+                                    sm = 12,
+                                    className = 'mb-3',
+                                ),
+                            ]
                         ),
-                        dbc.Col(
-                            dcc.Dropdown(
-                                id = 'search_type',
-                                placeholder = "Search by"
-                            ),
-                            width = 3,
-                            className = 'mb-3',
-                            style = {'min-width' : '150px'}
-                        ),
-                        dbc.Col(
-                            dbc.Button(
-                                '🔎 Search',
-                                id = 'search_submit',
-                                n_clicks = 0,
-                                style = {'width' : '100%'}
-                            ),
-                            width = 2,
-                            className = 'mb-3',
-                            style = {'min-width' : '150px'}
-                        ),
-                    ],
-                    align = 'center',
+                        md = 8,
+                        sm = 9
+                        #align = 'center'
+                    ),
                     justify = 'center'
-                ),
-                #dbc.Col(
-                #    "Advanced search",
-                #    width = 2
-                #)
+                )
             ],
             style = {
                 'position' : 'relative',
                 'z-index' : '2',
                 'margin-top' : '3em',
-                'margin-left' : '15em',
-                'margin-right' : '15em',
+                #'margin-left' : '15em',
+                #'margin-right' : '15em',
                 #'align-content' : 'center'
             },
         ),

@@ -95,7 +95,7 @@ layout = [
                                     )
                                 ]
                             )
-                        ]
+                        ], lg = 3, sm = 6, className = 'mb-3'
                     ),
                     dbc.Col(
                         [
@@ -114,7 +114,7 @@ layout = [
                                     )
                                 ]
                             )
-                        ]
+                        ], lg = 3, sm = 6, className = 'mb-3'
                     ),
                     dbc.Col(
                         [
@@ -133,7 +133,7 @@ layout = [
                                     )
                                 ]
                             )
-                        ]
+                        ], lg = 3, sm = 6, className = 'mb-3'
                     ),
                     dbc.Col(
                         [
@@ -164,7 +164,7 @@ layout = [
                                     )
                                 ]
                             )
-                        ]
+                        ], lg = 3, sm = 6, className = 'mb-3'
                     )
                 ],
                 style = {

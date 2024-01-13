@@ -6,6 +6,7 @@ from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import os
+import math
 
 from apps import commonmodules as cm
 from app import app
@@ -52,9 +53,11 @@ def populate_usertypedropdown (pathname):
         return [options1, options2, options3, options4]
     else: raise PreventUpdate
 
+# Callback for generating search results
 @app.callback(
     [
-        Output('search_results', 'children')
+        Output('search_results', 'children'),
+        Output('usearch_pagination', 'max_value')
     ],
     [
         Input('url', 'pathname'),
@@ -62,11 +65,12 @@ def populate_usertypedropdown (pathname):
         Input('usertype_checklist', 'value'),
         Input('userstatus_checklist', 'value'),
         Input('borrowstatus_checklist', 'value'),
-        Input('accesstype_checklist', 'value')
+        Input('accesstype_checklist', 'value'),
+        Input('usearch_pagination', 'active_page')
     ]
 )
 
-def generate_results (pathname, input, usertype_filter, userstatus_filter, borrowstatus_filter, accesstype_filter):
+def generate_results (pathname, input, usertype_filter, userstatus_filter, borrowstatus_filter, accesstype_filter, page):
     if pathname == '/user/search':
         sql = """SELECT u.user_id as id, u.user_username as username, u.user_lname as lname, u.user_fname as fname, u.user_mname as mname, u.user_livedname as livedname, u.user_pronouns as pronouns,
         t.usertype_name as usertype, b.borrowstatus_name as borrowstatus, s.userstatus_name as userstatus, a.accesstype_name as accesstype,
@@ -148,134 +152,133 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
         sql += """ ORDER BY u.user_id;"""
         df = db.querydatafromdatabase(sql, values, cols)
         results = []
-
+        max_value = math.ceil(len(df.index)/5)
         for i in df.index:
-            user_info = []
+            if i >= (page-1)*5 and i < (page-1)*5+5:
+                user_info = []
+                if df['usertype'][i] == 'Student':
+                    sql_utility = """SELECT us_d.degree_name AS degree, us_c.college_name AS college, us_y.year_level AS yearlevel
+                    FROM userblock.userstudent as us
+                    LEFT JOIN utilities.degreeprogram AS us_d ON (us.degree_id = us_d.degree_id AND us.student_college_id = us_d.college_id)
+                    LEFT JOIN utilities.college AS us_c ON us.student_college_id = us_c.college_id
+                    LEFT JOIN utilities.yearlevel AS us_y on us.year_id = us_y.year_id
+                    WHERE student_id = %s;"""
+                    values_utility = [df['id'][i]]
+                    cols_utility = ['degree', 'college', 'yearlevel']
+                    df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
 
-            if df['usertype'][i] == 'Student':
-                sql_utility = """SELECT us_d.degree_name AS degree, us_c.college_name AS college, us_y.year_level AS yearlevel
-                FROM userblock.userstudent as us
-                LEFT JOIN utilities.degreeprogram AS us_d ON (us.degree_id = us_d.degree_id AND us.student_college_id = us_d.college_id)
-                LEFT JOIN utilities.college AS us_c ON us.student_college_id = us_c.college_id
-                LEFT JOIN utilities.yearlevel AS us_y on us.year_id = us_y.year_id
-                WHERE student_id = %s;"""
-                values_utility = [df['id'][i]]
-                cols_utility = ['degree', 'college', 'yearlevel']
-                df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
+                    user_info = [
+                        html.B([df_utility['yearlevel'][0].lower(), " student, ", df_utility['degree'][0]]), html.Br(),
+                        df_utility['college'][0]
+                    ]
+                elif df['usertype'][i] == 'Faculty':
+                    sql_utility = """SELECT uf_c.college_name AS college, uf.faculty_desig AS desig
+                    FROM userblock.userfaculty AS uf
+                    LEFT JOIN utilities.college AS uf_c ON uf.faculty_college_id = uf_c.college_id
+                    WHERE faculty_id = %s;"""
+                    values_utility = [df['id'][i]]
+                    cols_utility = ['college', 'desig']
+                    df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
 
-                user_info = [
-                    html.B([df_utility['yearlevel'][0].lower(), " student, ", df_utility['degree'][0]]), html.Br(),
-                    df_utility['college'][0]
-                ]
-            elif df['usertype'][i] == 'Faculty':
-                sql_utility = """SELECT uf_c.college_name AS college, uf.faculty_desig AS desig
-                FROM userblock.userfaculty AS uf
-                LEFT JOIN utilities.college AS uf_c ON uf.faculty_college_id = uf_c.college_id
-                WHERE faculty_id = %s;"""
-                values_utility = [df['id'][i]]
-                cols_utility = ['college', 'desig']
-                df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
+                    user_info = [
+                        html.B(df_utility['desig'][0]), html.Br(),
+                        df_utility['college'][0]
+                    ]
+                elif df['usertype'][i] == 'Staff':
+                    sql_utility = """SELECT ut_o.office_name AS office, ut.staff_desig AS desig
+                    FROM userblock.userstaff AS ut
+                    LEFT JOIN utilities.office AS ut_o ON ut.office_id = ut_o.office_id
+                    WHERE staff_id = %s;"""
+                    values_utility = [df['id'][i]]
+                    cols_utility = ['office', 'desig']
+                    df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
 
-                user_info = [
-                    html.B(df_utility['desig'][0]), html.Br(),
-                    df_utility['college'][0]
-                ]
-            elif df['usertype'][i] == 'Staff':
-                sql_utility = """SELECT ut_o.office_name AS office, ut.staff_desig AS desig
-                FROM userblock.userstaff AS ut
-                LEFT JOIN utilities.office AS ut_o ON ut.office_id = ut_o.office_id
-                WHERE staff_id = %s;"""
-                values_utility = [df['id'][i]]
-                cols_utility = ['office', 'desig']
-                df_utility = db.querydatafromdatabase(sql_utility, values_utility, cols_utility)
+                    user_info = [
+                        html.B(df_utility['desig'][0]), html.Br(),
+                        df_utility['office'][0]
+                    ]
+                
+                mname = ""
+                if df['mname'][i]:
+                    mname = str(df['mname'][i][0]).upper() + "."
+                else: mname = ""
 
-                user_info = [
-                    html.B(df_utility['desig'][0]), html.Br(),
-                    df_utility['office'][0]
-                ]
-            
-            mname = ""
-            if df['mname'][i]:
-                mname = str(df['mname'][i][0]).upper() + "."
-            else: mname = ""
+                name = ""
+                if df['livedname'][i]: name = df['livedname'][i]
+                else: name = df['fname'][i]
 
-            name = ""
-            if df['livedname'][i]: name = df['livedname'][i]
-            else: name = df['fname'][i]
+                pronouns = ""
+                if df['pronouns'][i]:
+                    user_info.append(html.Br())
+                    user_info.append(
+                        " (%s)" % df['pronouns'][i]
+                    )
+                
+                image_path = "/assets/users/default.jpg"
+                if os.path.exists("assets/users/%s-%s-%s.jpg" % (df['usertype'][i].lower(), df['id'][i], df['username'][i])):
+                    image_path = "/assets/users/%s-%s-%s.jpg" % (df['usertype'][i].lower(), df['id'][i], df['username'][i])
 
-            pronouns = ""
-            if df['pronouns'][i]:
-                user_info.append(html.Br())
-                user_info.append(
-                    " (%s)" % df['pronouns'][i]
-                )
-            
-            image_path = "/assets/users/default.jpg"
-            if os.path.exists("assets/users/%s-%s-%s.jpg" % (df['usertype'][i].lower(), df['id'][i], df['username'][i])):
-                image_path = "/assets/users/%s-%s-%s.jpg" % (df['usertype'][i].lower(), df['id'][i], df['username'][i])
-
-            results.append(
-                dbc.Card(
-                    [
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    html.A(
-                                        dbc.CardImg(
-                                            src = image_path,
-                                            className="img-fluid rounded-start",
-                                            style = {
-                                                'border-radius' : '15px',
-                                                #height' : '100%'
-                                            }
+                results.append(
+                    dbc.Card(
+                        [
+                            dbc.Row(
+                                [
+                                    dbc.Col(
+                                        html.A(
+                                            dbc.CardImg(
+                                                src = image_path,
+                                                className="img-fluid rounded-start",
+                                                style = {
+                                                    'border-radius' : '15px',
+                                                    #height' : '100%'
+                                                }
+                                            ),
+                                            href = '/user/profile?mode=view&id=%s' % df['id'][i]
                                         ),
-                                        href = '/user/profile?mode=view&id=%s' % df['id'][i]
+                                        style = {
+                                            'maxWidth' : '256px',
+                                        },
+                                        className="col-md-4",
                                     ),
-                                    style = {
-                                        'maxWidth' : '256px',
-                                    },
-                                    className="col-md-4",
-                                ),
-                                dbc.Col(
-                                    dbc.CardBody(
-                                        [
-                                            html.Small(
-                                                "%s • %s" % (df['usertype'][i], df['username'][i]),
-                                                className="card-text text-muted",
-                                            ),
-                                            html.A(
-                                                html.H4("%s, %s %s" % (df['lname'][i], name, mname), className = "card-title"),
-                                                href = '/user/profile?mode=view&id=%s' % df['id'][i]
-                                            ),
-                                            html.P(
-                                                user_info,
-                                                className="card-text",
-                                            ),
-                                            html.Small(
-                                                [
-                                                    "User status: %s" % df['userstatus'][i], html.Br(),
-                                                    "Borrowing status: %s" % df['borrowstatus'][i], html.Br(),
-                                                    "Access type: %s" % df['accesstype'][i]
-                                                ],
-                                                className="card-text text-muted",
-                                            ),
-                                        ]
-                                    ),
-                                    className="col-md-8",
-                                )
-                            ],
-                            className="g-0 d-flex align-items-center",
-                        )
-                    ],
-                    className = "mb-3",
-                    style = {
-                        #'maxWidth': '512px',
-                        'border-radius' : '15px'
-                    }
+                                    dbc.Col(
+                                        dbc.CardBody(
+                                            [
+                                                html.Small(
+                                                    "%s • %s" % (df['usertype'][i], df['username'][i]),
+                                                    className="card-text text-muted",
+                                                ),
+                                                html.A(
+                                                    html.H4("%s, %s %s" % (df['lname'][i], name, mname), className = "card-title"),
+                                                    href = '/user/profile?mode=view&id=%s' % df['id'][i]
+                                                ),
+                                                html.P(
+                                                    user_info,
+                                                    className="card-text",
+                                                ),
+                                                html.Small(
+                                                    [
+                                                        "User status: %s" % df['userstatus'][i], html.Br(),
+                                                        "Borrowing status: %s" % df['borrowstatus'][i], html.Br(),
+                                                        "Access type: %s" % df['accesstype'][i]
+                                                    ],
+                                                    className="card-text text-muted",
+                                                ),
+                                            ]
+                                        ),
+                                        className="col-md-8",
+                                    )
+                                ],
+                                className="g-0 d-flex align-items-center",
+                            )
+                        ],
+                        className = "mb-3",
+                        style = {
+                            #'maxWidth': '512px',
+                            'border-radius' : '15px'
+                        }
+                    )
                 )
-            )
-        
-        return [results]
+        return [results, max_value]
     else:
         raise PreventUpdate
 
@@ -513,6 +516,18 @@ layout = html.Div(
                         html.Hr(),
                         html.Div(
                             id = 'search_results'
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                dbc.Pagination(
+                                    id = 'usearch_pagination',
+                                    first_last = True,
+                                    previous_next = True,
+                                    max_value = 1,
+                                    active_page = 1,
+                                    #style = {'margin' : 'auto'}
+                                ),
+                            ),
                         )
                     ]
                 )

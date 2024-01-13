@@ -36,9 +36,10 @@ def search_populatetypes(pathname):
         sql = """SELECT CONCAT(TO_CHAR(subj_tier1_id*100, '000'), ' ', subj_tier1_name) as label, subj_tier1_ID as value FROM utilities.SubjectTier1"""
         values = []
         cols = ['label', 'value']
-        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['label'])
+        df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
         list1 = []
-        for i in df.index:
+        i = 0
+        while i < len(df.index):
             list1.append(
                 html.A(
                     [
@@ -48,6 +49,7 @@ def search_populatetypes(pathname):
                     href = '/search?subj_tier1_id=' + str(df.iloc[i]['value'])
                 )
             )
+            i += 1
 
         sql = """SELECT resourcetype_name as label, resourcetype_ID as value FROM utilities.ResourceType"""
         values = []

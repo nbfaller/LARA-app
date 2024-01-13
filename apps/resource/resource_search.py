@@ -84,7 +84,6 @@ def generate_resourceresults (pathname, input):
         df = db.querydatafromdatabase(sql, values, cols)
         results = []
         for i in df.index:
-            auth_i = i
             authors = ''
             sql = """SELECT a.author_lname AS lname, a.author_fname AS fname
                 FROM resourceblock.resourceauthors as r_a
@@ -93,9 +92,9 @@ def generate_resourceresults (pathname, input):
             values = [df['id'][i]]
             cols = ['lname', 'fname']
             df_util = db.querydatafromdatabase(sql, values, cols)
-            for i in df_util.index:
-                authors += '%s, %s' % (df_util['lname'][i], df_util['fname'][i])
-                if i != len(df_util.index)-1:
+            for j in df_util.index:
+                authors += '%s, %s' % (df_util['lname'][j], df_util['fname'][j])
+                if j != len(df_util.index)-1:
                     authors += '; '
             results.append(
                 dbc.Card(
@@ -104,8 +103,8 @@ def generate_resourceresults (pathname, input):
                             [
                                 dbc.Col(
                                     dbc.Checkbox(
-                                        label = auth_i,
-                                        id = 'result_%s' % auth_i
+                                        label = i,
+                                        id = 'result_%s' % i
                                     ),
                                     className = 'p-3 col-md-1'
                                 ),

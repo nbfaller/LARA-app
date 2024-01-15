@@ -201,7 +201,6 @@ def navbarlinks(pathname, user_id, sessionlogout):
                         ]
                     )
                 )
-
             links.append(
                 dbc.Col(
                     dbc.DropdownMenu(
@@ -318,16 +317,17 @@ footer = html.Footer(
                 ),
                 dbc.Col(
                     [
-                        html.H4(["LÁRA: Library Access & Resources Administration System"]),
+                        html.H4(
+                            ["LÁRA: Library Access & Resources Administration System"],
+                            className = 'mb-1'
+                        ),
                         "Copyright © 2024. University Library, Northwest Samar State University", html.Br(),
                         html.A("About LÁRA", href = "/about-us"), " • ", html.A("Main Website", href = "https://nwssu.edu.ph"), " • ", html.A("Frequently Asked Questions", href = "/faq"),
                     ],
                     width = "auto"
                 ),
             ],
-            style = {
-                'margin' : 'auto',
-            },
+            style = {'margin' : 'auto'},
             align = 'center', justify = 'center'
         )
     ],

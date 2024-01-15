@@ -1425,7 +1425,14 @@ layout = html.Div(
                     [
                         html.Div(
                             [
-                                html.H1(['Register User'])
+                                html.H1(['Register User']),
+                                html.Small(
+                                    [
+                                        "Fields with red asterisks ",
+                                        html.Sup("*", className = 'text-danger'),
+                                        " are required."
+                                    ]
+                                )
                             ],
                             id = 'profile_header'
                         ),
@@ -1437,11 +1444,23 @@ layout = html.Div(
                                         dbc.Alert(id = 'register_alert', is_open = False),
                                         dbc.Row(
                                             [
-                                                dbc.Label ("User type", width = 2),
+                                                dbc.Label (
+                                                    [
+                                                        "User type",
+                                                        html.Sup("*", className = 'text-danger')
+                                                    ], width = 2
+                                                ),
                                                 dbc.Col(
                                                     dcc.Dropdown(id = 'usertype_id'), width = 3
                                                 ),
-                                                dbc.Label("ID No.", id = 'user_id_label', width = 3),
+                                                dbc.Label(
+                                                    [
+                                                        "ID No.",
+                                                        html.Sup("*", className = 'text-danger')
+                                                    ],
+                                                    id = 'user_id_label',
+                                                    width = 3
+                                                ),
                                                 dbc.Col(
                                                     dbc.Input(
                                                         type = 'text',

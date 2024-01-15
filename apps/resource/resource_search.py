@@ -158,12 +158,14 @@ def generate_resourceresults (pathname, input, type, subj, lang):
                                             ), html.Br(),
                                             html.A(
                                                 html.H4(df['title'][i]),
-                                                href = '/resource/record?id=%s' % df['id'][i]
+                                                href = '/resource/record?id=%s' % df['id'][i],
+                                                #className = 'mb-0'
                                             ),
-                                            html.P("by %s" % authors),
+                                            html.Small("by %s" % authors), html.Br(),
                                             html.Small(
                                                 ["Published %s" % df['date'][i]],
-                                                className = 'card-text text-muted')
+                                                className = 'card-text text-muted'
+                                            )
                                         ]
                                     ),
                                     className = 'col-md=8'

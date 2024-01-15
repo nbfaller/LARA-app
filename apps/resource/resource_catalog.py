@@ -346,6 +346,7 @@ def register_author(pathname, btn, lname, fname, mname):
                 alert_color = ''
                 alert_open = True
                 if lname and fname:
+                    cs_num = None
                     sql = """SELECT author_id AS id
                         FROM resourceblock.authors
                         WHERE author_lname = %s AND author_fname = %s AND author_mname = %s;"""
@@ -356,9 +357,29 @@ def register_author(pathname, btn, lname, fname, mname):
                         alert_text = "This author is already registered. Please select them in the dropdown menu above."
                         alert_color = 'danger'
                     else:
-                        sql = """INSERT INTO resourceblock.authors(author_lname, author_fname, author_mname)
-                            VALUES(%s, %s, %s);"""
-                        values = [lname, fname, mname]
+                        # Cutter sanborn number generator
+                        for c in range(2, len(lname)+1):
+                            sql = """SELECT cs_num AS num FROM utilities.cuttersanborn WHERE cs_char = %s AND cs_name ILIKE %s;"""
+                            values = [lname[0], f"%{lname[0:c]}%"]
+                            cols = ['num']
+                            df = db.querydatafromdatabase(sql, values, cols)
+                            if df.shape[0] == 1:
+                                cs_num = lname[0]+str(df['num'][0])
+                                break
+                            elif df.shape[0] > 1 and c == len(lname):
+                                name = lname + ', '
+                                for n in range(1, len(fname) + 1):
+                                    name += fname[n-1]
+                                    sql = """SELECT cs_num AS num FROM utilities.cuttersanborn WHERE cs_char = %s AND cs_name ILIKE %s;"""
+                                    values = [lname[0], f"%{name}%"]
+                                    cols = ['num']
+                                    df = db.querydatafromdatabase(sql, values, cols)
+                                    if df.shape[0] == 1 or (df.shape[0] > 1 and n == len(fname)):
+                                        cs_num = lname[0]+str(df['num'][0])
+                                        break
+                        sql = """INSERT INTO resourceblock.authors(author_lname, author_fname, author_mname, author_cutternum)
+                            VALUES(%s, %s, %s, %s);"""
+                        values = [lname, fname, mname, cs_num]
                         db.modifydatabase(sql, values)
                         alert_text = "New author successfully registered. Please select them in the dropdown menu above."
                         alert_color = 'success'
@@ -699,26 +720,9 @@ layout = [
                                             type = 'text',
                                             id = 'resource_title',
                                             placeholder = 'Title name'
-                                        ), width = 9
-                                    ),
-                                    dbc.Col(
-                                        dbc.Button(
-                                            "Register",
-                                            id = 'newtitle_btn',
-                                            style = {'width' : '100%'}
-                                        ), width = 2
+                                        ), width = 11
                                     )
                                 ], className = 'mb-3'
-                            ),
-                            dbc.Col(
-                                dbc.Alert(
-                                    "This title already exists.",
-                                    id = 'resourcetitle_alert',
-                                    color = 'danger',
-                                    dismissable = True,
-                                    is_open = False,
-                                    duration = 5000
-                                ), width = 11
                             )
                         ]
                     ),

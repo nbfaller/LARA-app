@@ -52,7 +52,7 @@ app.layout = html.Div(
 @app.callback(
     [
         Output('page-content', 'children'),
-        Output('sessionlogout', 'data')
+        Output('sessionlogout', 'data'),
     ],
     [
         Input('url', 'pathname')

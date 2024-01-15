@@ -22,7 +22,7 @@ import hashlib
         Output('publisher_id', 'options'),
         Output('collection_id', 'options'),
         Output('library_id', 'options'),
-        Output('existing_titles', 'options')
+        Output('existing_titles', 'options'),
     ],
     [
         Input('url', 'pathname'),
@@ -104,6 +104,16 @@ def populate_dropdowns(pathname, author_btn, publisher_btn):
 
         return [resourcetype, subjecttier1, authors, languages, publishers, collections, libraries, titles]
     else: raise PreventUpdate
+
+# Callback for populating existing sets dropdown
+#@app.callback(
+#    [
+#        Output('existing_sets', 'options')
+#    ],
+#    [
+#        Input('url', 'pathname'),
+#    ]
+#)
 
 # Callback for disabling inputs and setting values if title is selected
 @app.callback(
@@ -740,23 +750,23 @@ layout = [
                                     html.H3("Title Information"),
                                     dbc.Row(
                                         [
-                                            dbc.Label("Call number", width = 2),
+                                            dbc.Label("Call number", className = 'mb-3 col-sm-4 col-lg-2'),
                                             dbc.Col(
                                                 dbc.Input(
                                                     type = 'text',
                                                     id = 'call_num',
                                                     placeholder = 'R-AAA-BBBB-YYYY',
                                                     disabled = True
-                                                ), width = 3
+                                                ), className = 'mb-3 col-sm-7 col-lg-3'
                                             ),
-                                            dbc.Label("Resource type", width = 3),
+                                            dbc.Label("Resource type", className = 'mb-3 col-sm-4 col-lg-3'),
                                             dbc.Col(
                                                 dcc.Dropdown(
                                                     id = 'resourcetype_id',
                                                     placeholder = 'Select resource type...'
-                                                ), width = 3
+                                                ), className = 'mb-3 col-sm-7 col-lg-3'
                                             )
-                                        ], className = 'mb-3'
+                                        ], #className = 'mb-3'
                                     ),
                                     html.H5("Author(s)"),
                                     dbc.Col(
@@ -795,30 +805,30 @@ layout = [
                                                             type = 'text',
                                                             id = 'author_lname',
                                                             placeholder = 'Surname'
-                                                        ), width = 3 #9
+                                                        ), className = 'mb-3 col-sm-11 col-lg-3'
                                                     ),
                                                     dbc.Col(
                                                         dbc.Input(
                                                             type = 'text',
                                                             id = 'author_fname',
                                                             placeholder = 'First name'
-                                                        ), width = 3 #9
+                                                        ), className = 'mb-3 col-sm-11 col-lg-3'
                                                     ),
                                                     dbc.Col(
                                                         dbc.Input(
                                                             type = 'text',
                                                             id = 'author_mname',
                                                             placeholder = 'Middle name'
-                                                        ), width = 3 #9
+                                                        ), className = 'mb-3 col-sm-11 col-lg-3'
                                                     ),
                                                     dbc.Col(
                                                         dbc.Button(
                                                             "Register",
                                                             id = 'newauthor_btn',
                                                             style = {'width' : '100%'}
-                                                        ), width = 2
+                                                        ), className = 'mb-3 col-sm-11 col-lg-2'
                                                     )
-                                                ], className = 'mb-3'
+                                                ], #className = 'mb-3'
                                             )
                                         ]
                                     ),
@@ -848,53 +858,56 @@ layout = [
                                             dbc.Label(
                                                 "Level 1 Class",
                                                 id = 'subj_tier1_label',
-                                                width = 2),
+                                                className = 'mb-3 col-sm-11 col-lg-2'
+                                            ),
                                             dbc.Col(
                                                 dcc.Dropdown(
                                                     id = 'subj_tier1_id'
-                                                ), width = 9
+                                                ), className = 'mb-3 col-sm-11 col-lg-9'
                                             ),
                                             dbc.Tooltip(
                                                 """Level 1 refers to the hundreds digit of the resource's subject classification. (E.g., 100, 200, 300.)""",
                                                 target = 'subj_tier1_label'
                                             ),
-                                        ], className = 'mb-3'
+                                        ], #className = 'mb-3'
                                     ),
                                     dbc.Row(
                                         [
                                             dbc.Label(
                                                 "Level 2 Class",
                                                 id = 'subj_tier2_label',
-                                                width = 2),
+                                                className = 'mb-3 col-sm-11 col-lg-2'
+                                            ),
                                             dbc.Col(
                                                 dcc.Dropdown(
                                                     id = 'subj_tier2_id',
                                                     #disabled = True
-                                                ), width = 9
+                                                ), className = 'mb-3 col-sm-11 col-lg-9'
                                             ),
                                             dbc.Tooltip(
                                                 """Level 2 refers to the tens digit of the resource's subject classification. (E.g., 110, 120, 130.)""",
                                                 target = 'subj_tier2_label'
                                             ),
-                                        ], className = 'mb-3'
+                                        ], #className = 'mb-3'
                                     ),
                                     dbc.Row(
                                         [
                                             dbc.Label(
                                                 "Level 3 Class",
                                                 id = 'subj_tier3_label',
-                                                width = 2),
+                                                className = 'mb-3 col-sm-11 col-lg-2'
+                                            ),
                                             dbc.Col(
                                                 dcc.Dropdown(
                                                     id = 'subj_tier3_id',
                                                     #disabled = True
-                                                ), width = 9
+                                                ), className = 'mb-3 col-sm-11 col-lg-9'
                                             ),
                                             dbc.Tooltip(
                                                 """Level 3 refers to the ones digit of the resource's subject classification. (E.g., 110, 111, 112.)""",
                                                 target = 'subj_tier3_label'
                                             ),
-                                        ], className = 'mb-3'
+                                        ], #className = 'mb-3'
                                     ),
                                     #html.Hr(),
                                     #html.H5("Title Information"),
@@ -903,7 +916,8 @@ layout = [
                                             dbc.Label(
                                                 "Copyright date",
                                                 id = 'copyright_date_label',
-                                                width = 2),
+                                                className = 'mb-3 col-sm-4 col-lg-2'
+                                            ),
                                             dbc.Col(
                                                 dcc.DatePickerSingle(
                                                     id = 'copyright_date',
@@ -911,7 +925,7 @@ layout = [
                                                     month_format = 'MMM Do, YYYY',
                                                     clearable = True,
                                                     style = {'width' : '100%'}
-                                                ), width = 3
+                                                ), className = 'mb-3 col-sm-7 col-lg-3'
                                             ),
                                             dbc.Tooltip(
                                                 """In case the resource does not have a precise copyright date
@@ -922,14 +936,15 @@ layout = [
                                             ),
                                             dbc.Label(
                                                 "Edition number",
-                                                width = 3),
+                                                className = 'mb-3 col-sm-4 col-lg-3'
+                                            ),
                                             dbc.Col(
                                                 dbc.Input(
                                                     type = 'number',
                                                     min = 0,
                                                     id = 'resource_edition',
                                                     placeholder = 'Example: 1, 2, 3',
-                                                ), width = 3
+                                                ), className = 'mb-3 col-sm-7 col-lg-3'
                                             ),
                                         ], className = 'mb-3'
                                     ),
@@ -937,23 +952,25 @@ layout = [
                                         [
                                             dbc.Label(
                                                 "Language",
-                                                width = 2),
+                                                className = 'mb-3 col-sm-4 col-lg-2'
+                                            ),
                                             dbc.Col(
                                                 dcc.Dropdown(
                                                     id = 'language_id',
                                                     placeholder = 'Select language...'
-                                                ), width = 3
+                                                ), className = 'mb-3 col-sm-7 col-lg-3'
                                             ),
                                             dbc.Label(
                                                 "Collection",
-                                                width = 3),
+                                                className = 'mb-3 col-sm-4 col-lg-3'
+                                            ),
                                             dbc.Col(
                                                 dcc.Dropdown(
                                                     id = 'collection_id',
                                                     placeholder = 'Select collection...'
-                                                ), width = 3
+                                                ), className = 'mb-3 col-sm-7 col-lg-3'
                                             ),
-                                        ], className = 'mb-3'
+                                        ], #className = 'mb-3'
                                     ),
                                     html.H5("Publisher"),
                                     dbc.Col(
@@ -991,23 +1008,23 @@ layout = [
                                                             type = 'text',
                                                             id = 'publisher_name',
                                                             placeholder = 'Publisher name'
-                                                        ), width = 6 #9
+                                                        ), className = 'mb-3 col-sm-11 col-lg-6'
                                                     ),
                                                     dbc.Col(
                                                         dbc.Input(
                                                             type = 'text',
                                                             id = 'publisher_loc',
                                                             placeholder = 'Publisher city/state/country'
-                                                        ), width = 3 #9
+                                                        ), className = 'mb-3 col-sm-11 col-lg-3'
                                                     ),
                                                     dbc.Col(
                                                         dbc.Button(
                                                             "Register",
                                                             id = 'newpublisher_btn',
                                                             style = {'width' : '100%'}
-                                                        ), width = 2
+                                                        ), className = 'mb-3 col-sm-11 col-lg-2'
                                                     )
-                                                ], className = 'mb-3'
+                                                ], #className = 'mb-3'
                                             )
                                         ]
                                     ),
@@ -1032,6 +1049,27 @@ layout = [
                                     dbc.Row(
                                         dbc.Col(
                                             html.P(
+                                                """If a specific set of this title (e.g. volume, number, et cetera) is already registered in LÁRA
+                                                and you only wish to add copies to this set, you can select it in the dropdown menu below."""
+                                            ),
+                                            width = 11
+                                        )
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            #dbc.Label("Title name", width = 2),
+                                            dbc.Col(
+                                                dcc.Dropdown(
+                                                    #type = 'text',
+                                                    id = 'existing_sets',
+                                                    placeholder = 'Set information'
+                                                ), width = 11 #9
+                                            ),
+                                        ], className = 'mb-3'
+                                    ),
+                                    dbc.Row(
+                                        dbc.Col(
+                                            html.P(
                                                 """Otherwise, please input all applicable details below."""
                                             ),
                                             width = 11
@@ -1041,7 +1079,7 @@ layout = [
                                         [
                                             dbc.Label(
                                                 "Volume number",
-                                                width = 2
+                                                className = 'mb-3 col-sm-4 col-lg-1'
                                             ),
                                             dbc.Col(
                                                 dbc.Input(
@@ -1049,11 +1087,11 @@ layout = [
                                                     min = 0,
                                                     id = 'resource_volnum',
                                                     placeholder = 'Volume number'
-                                                ), width = 3 #9
+                                                ), className = 'mb-3 col-sm-7 col-lg-3'
                                             ),
                                             dbc.Label(
                                                 "Series number",
-                                                width = 3
+                                                className = 'mb-3 col-sm-4 col-lg-3'
                                             ),
                                             dbc.Col(
                                                 dbc.Input(
@@ -1061,67 +1099,67 @@ layout = [
                                                     min = 0,
                                                     id = 'resource_seriesnum',
                                                     placeholder = 'Series number'
-                                                ), width = 3 #9
+                                                ), className = 'mb-3 col-sm-7 col-lg-3'
                                             ),
                                         ],
-                                        className = 'mb-3'
+                                        #className = 'mb-3'
                                     ),
                                     dbc.Row(
                                         [
                                             dbc.Label(
                                                 "ISBN (if applicable)",
-                                                width = 2
+                                                className = 'mb-3 col-sm-4 col-lg-2'
                                             ),
                                             dbc.Col(
                                                 dbc.Input(
                                                     type = 'text',
                                                     id = 'resource_isbn',
                                                     placeholder = 'ISBN'
-                                                ), width = 3 #9
+                                                ), className = 'mb-3 col-sm-7 col-lg-3'
                                             ),
                                             dbc.Label(
                                                 "ISSN (if applicable)",
-                                                width = 3
+                                                className = 'mb-3 col-sm-4 col-lg-3'
                                             ),
                                             dbc.Col(
                                                 dbc.Input(
                                                     type = 'text',
                                                     id = 'resource_issn',
                                                     placeholder = 'ISSN'
-                                                ), width = 3 #9
+                                                ), className = 'mb-3 col-sm-7 col-lg-3'
                                             ),
                                         ],
-                                        className = 'mb-3'
+                                        #className = 'mb-3'
                                     ),
                                     dbc.Row(
                                         [
                                             dbc.Label(
                                                 "Resource description",
-                                                width = 2
+                                                className = 'mb-3 col-sm-11 col-lg-2'
                                             ),
                                             dbc.Col(
                                                 dbc.Textarea(
                                                     id = 'resource_desc',
                                                     placeholder = 'Enter description here.'
-                                                ), width = 9
+                                                ), className = 'mb-3 col-sm-11 col-lg-9'
                                             )
                                         ],
-                                        className = 'mb-3'
+                                        #className = 'mb-3'
                                     ),
                                     dbc.Row(
                                         [
                                             dbc.Label(
                                                 "Table of contents",
-                                                width = 2
+                                                className = 'mb-3 col-sm-11 col-lg-2'
                                             ),
                                             dbc.Col(
                                                 dbc.Textarea(
                                                     id = 'resource_contents',
                                                     placeholder = 'Enter table of contents here.'
-                                                ), width = 9
+                                                ), className = 'mb-3 col-sm-11 col-lg-9'
                                             )
                                         ],
-                                        className = 'mb-3'
+                                        #className = 'mb-3'
                                     )
                                 ], id = 'set_information'
                             ),
@@ -1144,7 +1182,7 @@ layout = [
                                                         placeholder = 'Select library...'
                                                     ),
                                                     dbc.FormText("Library"),
-                                                ], width = 5
+                                                ], className = 'mb-3 col-sm-9 col-lg-5'
                                             ),
                                             dbc.Col(
                                                 [
@@ -1155,9 +1193,9 @@ layout = [
                                                         value = 1
                                                     ),
                                                     dbc.FormText("Total number"),
-                                                ], width = 1 #9
+                                                ], className = 'mb-3 col-sm-2 col-lg-1'
                                             ),
-                                            dbc.Label("Copies per classification type", width = 2),
+                                            dbc.Label("Copies per classification type", className = 'mb-3 col-sm-5 col-lg-2'),
                                             dbc.Col(
                                                 [
                                                     dbc.Input(
@@ -1167,7 +1205,7 @@ layout = [
                                                         value = 0
                                                     ),
                                                     dbc.FormText("Room-use only"),
-                                                ], width = 1 #9
+                                                ], className = 'mb-3 col-sm-2 col-lg-1'
                                             ),
                                             dbc.Col(
                                                 [
@@ -1178,7 +1216,7 @@ layout = [
                                                         value = 0
                                                     ),
                                                     dbc.FormText("Reserve books"),
-                                                ], width = 1 #9
+                                                ], className = 'mb-3 col-sm-2 col-lg-1'
                                             ),
                                             dbc.Col(
                                                 [
@@ -1190,9 +1228,9 @@ layout = [
                                                         disabled = True
                                                     ),
                                                     dbc.FormText("Regular circulation"),
-                                                ], width = 1 #9
+                                                ], className = 'mb-3 col-sm-2 col-lg-1'
                                             ),
-                                        ], className = 'mb-3'
+                                        ], #className = 'mb-3'
                                     )
                                 ], id = 'copy_information'
                             )

@@ -109,7 +109,7 @@ def populate_dropdowns(pathname, author_btn, publisher_btn):
 @app.callback(
     [
         Output('resourcetype_id', 'value'), Output('resourcetype_id', 'disabled'),
-        Output('resource_title', 'value'), Output('resource_title', 'disabled'), Output('newtitle_btn', 'disabled'),
+        Output('resource_title', 'value'), Output('resource_title', 'disabled'),
         Output('author_lname', 'disabled'),
         Output('author_fname', 'disabled'),
         Output('author_mname', 'disabled'),
@@ -151,7 +151,7 @@ def set_existingtitle(pathname, title):
             authors = df2['author'].to_list()
             return [
                 df['type'][0], True,
-                df['title'][0], True, True,
+                df['title'][0], True,
                 True,
                 True,
                 True,
@@ -169,7 +169,7 @@ def set_existingtitle(pathname, title):
             ]
         else: return [
             None, False,
-            None, False, False,
+            None, False,
             False,
             False,
             False,
@@ -685,12 +685,14 @@ layout = [
             dbc.Col(
                 [
                     html.H1("Resource record", id = 'header'),
-                    dbc.Col(
-                        html.P(
-                            """If this title is already registered in LÁRA,
-                            you can select it in the dropdown menu below."""
-                        ),
-                        width = 11
+                    dbc.Row(
+                        dbc.Col(
+                            html.P(
+                                """If this title is already registered in LÁRA,
+                                you can select it in the dropdown menu below."""
+                            ),
+                            width = 11
+                        )
                     ),
                     dbc.Row(
                         [
@@ -704,29 +706,6 @@ layout = [
                             ),
                         ], className = 'mb-3'
                     ),
-                    dbc.Col(
-                        html.P(
-                            ["""If the title is not found above (or if you're cataloging a new edition), you can enter it below."""]
-                        ),
-                        width = 11
-                    ),
-                    dbc.Form(
-                        [
-                            dbc.Row(
-                                [
-                                    #dbc.Label("Title name", width = 2),
-                                    dbc.Col(
-                                        dbc.Input(
-                                            type = 'text',
-                                            id = 'resource_title',
-                                            placeholder = 'Title name'
-                                        ), width = 11
-                                    )
-                                ], className = 'mb-3'
-                            )
-                        ]
-                    ),
-                    html.Hr(),
                     dbc.Form(
                         [
                             html.Div(
@@ -737,6 +716,27 @@ layout = [
                                         dismissable = True,
                                         duration = 5000
                                     ),
+                                    dbc.Row(
+                                        dbc.Col(
+                                            html.P(
+                                                ["""If the title is not found above (or if you're cataloging a new edition), you can enter it below."""]
+                                            ),
+                                            width = 11
+                                        )
+                                    ),
+                                    dbc.Row(
+                                        [
+                                            #dbc.Label("Title name", width = 2),
+                                            dbc.Col(
+                                                dbc.Input(
+                                                    type = 'text',
+                                                    id = 'resource_title',
+                                                    placeholder = 'Title name'
+                                                ), width = 11
+                                            )
+                                        ], className = 'mb-3'
+                                    ),
+                                    html.Hr(),
                                     html.H3("Title Information"),
                                     dbc.Row(
                                         [
@@ -779,44 +779,48 @@ layout = [
                                             ),
                                         ], className = 'mb-3'
                                     ),
-                                    dbc.Col(
-                                        html.P(
-                                            ["""If the authors of this resource are not found above, you can register them here first."""]
-                                        ),
-                                        width = 11
-                                    ),
-                                    dbc.Row(
+                                    dbc.Form(
                                         [
-                                            #dbc.Label("Author name", width = 2),
                                             dbc.Col(
-                                                dbc.Input(
-                                                    type = 'text',
-                                                    id = 'author_lname',
-                                                    placeholder = 'Surname'
-                                                ), width = 3 #9
+                                                html.P(
+                                                    ["""If the authors of this resource are not found above, you can register them here first."""]
+                                                ),
+                                                width = 11
                                             ),
-                                            dbc.Col(
-                                                dbc.Input(
-                                                    type = 'text',
-                                                    id = 'author_fname',
-                                                    placeholder = 'First name'
-                                                ), width = 3 #9
-                                            ),
-                                            dbc.Col(
-                                                dbc.Input(
-                                                    type = 'text',
-                                                    id = 'author_mname',
-                                                    placeholder = 'Middle name'
-                                                ), width = 3 #9
-                                            ),
-                                            dbc.Col(
-                                                dbc.Button(
-                                                    "Register",
-                                                    id = 'newauthor_btn',
-                                                    style = {'width' : '100%'}
-                                                ), width = 2
+                                            dbc.Row(
+                                                [
+                                                    #dbc.Label("Author name", width = 2),
+                                                    dbc.Col(
+                                                        dbc.Input(
+                                                            type = 'text',
+                                                            id = 'author_lname',
+                                                            placeholder = 'Surname'
+                                                        ), width = 3 #9
+                                                    ),
+                                                    dbc.Col(
+                                                        dbc.Input(
+                                                            type = 'text',
+                                                            id = 'author_fname',
+                                                            placeholder = 'First name'
+                                                        ), width = 3 #9
+                                                    ),
+                                                    dbc.Col(
+                                                        dbc.Input(
+                                                            type = 'text',
+                                                            id = 'author_mname',
+                                                            placeholder = 'Middle name'
+                                                        ), width = 3 #9
+                                                    ),
+                                                    dbc.Col(
+                                                        dbc.Button(
+                                                            "Register",
+                                                            id = 'newauthor_btn',
+                                                            style = {'width' : '100%'}
+                                                        ), width = 2
+                                                    )
+                                                ], className = 'mb-3'
                                             )
-                                        ], className = 'mb-3'
+                                        ]
                                     ),
                                     dbc.Row(
                                         dbc.Col(
@@ -969,37 +973,43 @@ layout = [
                                             ),
                                         ], className = 'mb-3'
                                     ),
-                                    dbc.Col(
-                                        html.P(
-                                            ["""If the publisher of this resource is not found above, you can register them here first."""]
-                                        ),
-                                        width = 11
-                                    ),
-                                    dbc.Row(
+                                    dbc.Form(
                                         [
-                                            #dbc.Label("Publisher information", width = 2),
-                                            dbc.Col(
-                                                dbc.Input(
-                                                    type = 'text',
-                                                    id = 'publisher_name',
-                                                    placeholder = 'Publisher name'
-                                                ), width = 6 #9
+                                            dbc.Row(
+                                                dbc.Col(
+                                                    html.P(
+                                                        ["""If the publisher of this resource is not found above, you can register them here first."""]
+                                                    ),
+                                                    width = 11
+                                                )
                                             ),
-                                            dbc.Col(
-                                                dbc.Input(
-                                                    type = 'text',
-                                                    id = 'publisher_loc',
-                                                    placeholder = 'Publisher city/state/country'
-                                                ), width = 3 #9
-                                            ),
-                                            dbc.Col(
-                                                dbc.Button(
-                                                    "Register",
-                                                    id = 'newpublisher_btn',
-                                                    style = {'width' : '100%'}
-                                                ), width = 2
+                                            dbc.Row(
+                                                [
+                                                    #dbc.Label("Publisher information", width = 2),
+                                                    dbc.Col(
+                                                        dbc.Input(
+                                                            type = 'text',
+                                                            id = 'publisher_name',
+                                                            placeholder = 'Publisher name'
+                                                        ), width = 6 #9
+                                                    ),
+                                                    dbc.Col(
+                                                        dbc.Input(
+                                                            type = 'text',
+                                                            id = 'publisher_loc',
+                                                            placeholder = 'Publisher city/state/country'
+                                                        ), width = 3 #9
+                                                    ),
+                                                    dbc.Col(
+                                                        dbc.Button(
+                                                            "Register",
+                                                            id = 'newpublisher_btn',
+                                                            style = {'width' : '100%'}
+                                                        ), width = 2
+                                                    )
+                                                ], className = 'mb-3'
                                             )
-                                        ], className = 'mb-3'
+                                        ]
                                     ),
                                     dbc.Row(
                                         dbc.Col(
@@ -1019,10 +1029,13 @@ layout = [
                             html.Div(
                                 [
                                     html.H3("Set Information"),
-                                    dbc.Col(
-                                        html.P("""Enter set-specific information (volumes, series, et cetera)
-                                               under titles here."""),
-                                        width = 11
+                                    dbc.Row(
+                                        dbc.Col(
+                                            html.P(
+                                                """Otherwise, please input all applicable details below."""
+                                            ),
+                                            width = 11
+                                        )
                                     ),
                                     dbc.Row(
                                         [

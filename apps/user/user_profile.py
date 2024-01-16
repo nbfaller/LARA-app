@@ -1448,10 +1448,11 @@ layout = html.Div(
                                                     [
                                                         "User type",
                                                         html.Sup("*", className = 'text-danger')
-                                                    ], width = 2
+                                                    ], className = 'mb-3 col-sm-4 col-lg-2'
                                                 ),
                                                 dbc.Col(
-                                                    dcc.Dropdown(id = 'usertype_id'), width = 3
+                                                    dcc.Dropdown(id = 'usertype_id'),
+                                                    className = 'mb-3 col-sm-7 col-lg-3'
                                                 ),
                                                 dbc.Label(
                                                     [
@@ -1459,16 +1460,16 @@ layout = html.Div(
                                                         html.Sup("*", className = 'text-danger')
                                                     ],
                                                     id = 'user_id_label',
-                                                    width = 3
+                                                    className = 'mb-3 col-sm-4 col-lg-3'
                                                 ),
                                                 dbc.Col(
                                                     dbc.Input(
                                                         type = 'text',
                                                         id = 'user_id',
                                                         placeholder = 'Enter ID number'
-                                                    ), width = 3
+                                                    ), className = 'mb-3 col-sm-7 col-lg-3'
                                                 )
-                                            ], className = 'mb-3'
+                                            ], #className = 'mb-3'
                                         ),
                                         html.Div(
                                             [
@@ -1476,54 +1477,54 @@ layout = html.Div(
                                                 #html.H3("Student Information"),
                                                 dbc.Row(
                                                     [
-                                                        dbc.Label("College", width = 2),
+                                                        dbc.Label("College", className = 'mb-3 col-sm-4 col-lg-2'),
                                                         dbc.Col(
                                                             dcc.Dropdown(
                                                                 id = 'student_college_id'
-                                                            ), width = 9
+                                                            ), className = 'mb-3 col-sm-7 col-lg-9'
                                                         )
-                                                    ], className = 'mb-3'
+                                                    ], #className = 'mb-3'
                                                 ),
                                                 dbc.Row(
                                                     [
-                                                        dbc.Label("Degree Program", width = 2),
+                                                        dbc.Label("Degree Program", className = 'mb-3 col-sm-4 col-lg-2'),
                                                         dbc.Col(
                                                             dcc.Dropdown(
                                                                 id = 'degree_id',
                                                                 disabled = True
-                                                            ), width = 9
+                                                            ), className = 'mb-3 col-sm-7 col-lg-9'
                                                         ),
-                                                    ], className = 'mb-3'
+                                                    ], #className = 'mb-3'
                                                 ),
                                                 dbc.Row(
                                                     [
-                                                        dbc.Label("Year level", width = 2),
+                                                        dbc.Label("Year level", className = 'mb-3 col-sm-4 col-lg-2'),
                                                         dbc.Col(
                                                             dcc.Dropdown(
                                                                 id = 'year_id'
                                                             ),
-                                                            width = 3
+                                                            className = 'col-sm-7 col-lg-3'
                                                         )
-                                                    ], className = 'mb-3'
+                                                    ], #className = 'mb-3'
                                                 ),
                                                 dbc.Row(
                                                     [
-                                                        dbc.Label("Access type", width = 2),
+                                                        dbc.Label("Access type", className = 'mb-3 col-sm-4 col-lg-2'),
                                                         dbc.Col(
                                                             dcc.Dropdown(
                                                                 id = 'student_accesstype_id',
                                                                 value = 1,
                                                                 disabled = True
-                                                            ), width = 3
+                                                            ), #className = 'mb-3 col-sm-7 col-lg-3'
                                                         )
                                                     ],
                                                     id = 'studentid_block',
                                                     style = {'display' : 'none'},
-                                                    className = 'mb-3'
+                                                    #className = 'mb-3'
                                                 ),
                                                 dbc.Row(
                                                     [
-                                                        dbc.Label("Student ID No.", width = 3),
+                                                        dbc.Label("Student ID No.", className = 'mb-3 col-sm-4 col-lg-3'),
                                                         dbc.Col(
                                                             dbc.Input(
                                                                 type = 'text',
@@ -1531,7 +1532,7 @@ layout = html.Div(
                                                                 placeholder = 'Enter ID number',
                                                                 disabled = True
                                                             ),
-                                                            width = 3
+                                                            className = 'mb-3 col-sm-7 col-lg-3'
                                                         )
                                                     ],
                                                     id = 'studentid_block',
@@ -1548,39 +1549,39 @@ layout = html.Div(
                                                 #html.H3("Faculty Information"),
                                                 dbc.Row(
                                                     [
-                                                        dbc.Label("College", width = 2),
+                                                        dbc.Label("College", className = 'mb-3 col-sm-4 col-lg-2'),
                                                         dbc.Col(
                                                             dcc.Dropdown(
                                                                 id = 'faculty_college_id'
-                                                            ), width = 9
+                                                            ), className = 'mb-3 col-sm-7 col-lg-9'
                                                         )
-                                                    ], className = 'mb-3'
+                                                    ], #className = 'mb-3'
                                                 ),
                                                 dbc.Row(
                                                     [
-                                                        dbc.Label("Designation", width = 2),
+                                                        dbc.Label("Designation", className = 'mb-3 col-sm-4 col-lg-2'),
                                                         dbc.Col(
                                                             dbc.Input(
                                                                 type = 'text',
                                                                 id = 'faculty_desig',
                                                                 placeholder = 'e.g. Instructor I, Professor II'
                                                             ),
-                                                            width = 9
+                                                            className = 'mb-3 col-sm-7 col-lg-9'
                                                         )
-                                                    ], className = 'mb-3'
+                                                    ], #className = 'mb-3'
                                                 ),
                                                 dbc.Row(
                                                     [
-                                                        dbc.Label("Access type", width = 2),
+                                                        dbc.Label("Access type", className = 'col-sm-4 col-lg-2'),
                                                         dbc.Col(
                                                             dcc.Dropdown(
                                                                 id = 'faculty_accesstype_id',
                                                                 value = 1
-                                                            ), width = 3
+                                                            ), className = 'col-sm-7 col-lg-3'
                                                         ),
                                                         html.Div(
                                                             [
-                                                                dbc.Label("Faculty ID No.", width = 3),
+                                                                dbc.Label("Faculty ID No.", className = 'mb-3 col-sm-4 col-lg-3'),
                                                                 dbc.Col(
                                                                     dbc.Input(
                                                                         type = 'text',
@@ -1588,7 +1589,7 @@ layout = html.Div(
                                                                         placeholder = 'Enter ID number',
                                                                         disabled = True
                                                                     ),
-                                                                    width = 3
+                                                                    #className = 'mb-3 col-sm-7 col-lg-3'
                                                                 )
                                                             ],
                                                             id = 'facultyid_block',
@@ -1606,35 +1607,35 @@ layout = html.Div(
                                                 #html.H3("Staff Information"),
                                                 dbc.Row(
                                                     [
-                                                        dbc.Label("Office", width = 2),
+                                                        dbc.Label("Office", className = 'mb-3 col-sm-4 col-lg-2'),
                                                         dbc.Col(
                                                             dcc.Dropdown(
                                                                 id = 'office_id'
-                                                            ), width = 9
+                                                            ), className = 'mb-3 col-sm-7 col-lg-9'
                                                         )
-                                                    ], className = 'mb-3'
+                                                    ], #className = 'mb-3'
                                                 ),
                                                 dbc.Row(
                                                     [
-                                                        dbc.Label("Designation", width = 2),
+                                                        dbc.Label("Designation", className = 'mb-3 col-sm-4 col-lg-2'),
                                                         dbc.Col(
                                                             dbc.Input(
                                                                 type = 'text',
                                                                 id = 'staff_desig',
                                                                 placeholder = 'e.g. Registrar I, Librarian I'
                                                             ),
-                                                            width = 9
+                                                            className = 'mb-3 col-sm-7 col-lg-9'
                                                         )
-                                                    ], className = 'mb-3'
+                                                    ], #className = 'mb-3'
                                                 ),
                                                 dbc.Row(
                                                     [
-                                                        dbc.Label("Access type", width = 2),
+                                                        dbc.Label("Access type", className = 'col-sm-4 col-lg-2'),
                                                         dbc.Col(
                                                             dcc.Dropdown(
                                                                 id = 'staff_accesstype_id',
                                                                 value = 1,
-                                                            ), width = 3
+                                                            ), className = 'col-sm-7 col-lg-3'
                                                         ),
                                                         html.Div(
                                                             [
@@ -1646,7 +1647,6 @@ layout = html.Div(
                                                                         placeholder = 'Enter ID number',
                                                                         disabled = True
                                                                     ),
-                                                                    width = 3
                                                                 )
                                                             ],
                                                             id = 'staffid_block',

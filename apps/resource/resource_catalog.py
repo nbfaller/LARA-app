@@ -1079,7 +1079,7 @@ layout = [
                                         [
                                             dbc.Label(
                                                 "Volume number",
-                                                className = 'mb-3 col-sm-4 col-lg-1'
+                                                className = 'mb-3 col-sm-4 col-lg-2'
                                             ),
                                             dbc.Col(
                                                 dbc.Input(

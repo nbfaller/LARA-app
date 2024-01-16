@@ -291,7 +291,8 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
         Output('borrowstatus_dropdown', 'color'),
         Output('borrowstatus_dropdown', 'label'),
         Output('accesstype_dropdown', 'color'),
-        Output('accesstype_dropdown', 'label')
+        Output('accesstype_dropdown', 'label'),
+        Output('clearfilters_btn', 'color')
     ],
     [
         Input('url', 'pathname'),
@@ -308,10 +309,11 @@ def activate_dropdown(pathname, usertype, userstatus, borrowstatus, accesstype):
         label_us = ['User status']
         label_bs = ['Borrowing status']
         label_at = ['Access type']
-        color_ut = 'secondary'
-        color_us = 'secondary'
-        color_bs = 'secondary'
-        color_at = 'secondary'
+        color_ut = 'white'
+        color_us = 'white'
+        color_bs = 'white'
+        color_at = 'white'
+        color_clr = 'white'
         if not (usertype == None or usertype == []):
             label_ut += [
                 " ",
@@ -324,6 +326,7 @@ def activate_dropdown(pathname, usertype, userstatus, borrowstatus, accesstype):
                 )
             ]
             color_ut = 'primary'
+            color_clr = 'warning'
         if not (userstatus == None or userstatus == []):
             label_us += [
                 " ",
@@ -336,6 +339,7 @@ def activate_dropdown(pathname, usertype, userstatus, borrowstatus, accesstype):
                 )
             ]
             color_us = 'primary'
+            color_clr = 'warning'
         if not (borrowstatus == None or borrowstatus == []):
             label_bs += [
                 " ",
@@ -348,6 +352,7 @@ def activate_dropdown(pathname, usertype, userstatus, borrowstatus, accesstype):
                 )
             ]
             color_bs = 'primary'
+            color_clr = 'warning'
         if not (accesstype == None or accesstype == []):
             label_at += [
                 " ",
@@ -360,7 +365,8 @@ def activate_dropdown(pathname, usertype, userstatus, borrowstatus, accesstype):
                 )
             ]
             color_at = 'primary'
-        return [color_ut, label_ut, color_us, label_us, color_bs, label_bs, color_at, label_at]
+            color_clr = 'warning'
+        return [color_ut, label_ut, color_us, label_us, color_bs, label_bs, color_at, label_at, color_clr]
     else: raise PreventUpdate
 
 # Callback for clearing filters
@@ -401,7 +407,7 @@ layout = html.Div(
                                             dbc.Input(
                                                 id = 'search_input',
                                                 type = 'text',
-                                                placeholder = 'Search by last name, first name, middle name, or ID number',
+                                                placeholder = 'Search by last name, first name, middle name, lived name, or ID number',
                                             )
                                         )
                                     ],
@@ -428,7 +434,9 @@ layout = html.Div(
                                                         }
                                                     ),
                                                     id = 'usertype_dropdown',
-                                                    color = 'secondary'
+                                                    color = 'white',
+                                                    label = 'User type',
+                                                    size = 'sm'
                                                 )
                                             ],
                                             width = 'auto'
@@ -444,8 +452,9 @@ layout = html.Div(
                                                         }
                                                     ),
                                                     id = 'userstatus_dropdown',
-                                                    color = 'secondary',
-                                                    label = 'User status'
+                                                    color = 'white',
+                                                    label = 'User status',
+                                                    size = 'sm'
                                                 )
                                             ],
                                             width = 'auto'
@@ -461,8 +470,9 @@ layout = html.Div(
                                                         }
                                                     ),
                                                     id = 'borrowstatus_dropdown',
-                                                    color = 'secondary',
-                                                    label = 'Borrowing status'
+                                                    color = 'white',
+                                                    label = 'Borrowing status',
+                                                    size = 'sm'
                                                 )
                                             ],
                                             width = 'auto'
@@ -478,8 +488,9 @@ layout = html.Div(
                                                         }
                                                     ),
                                                     id = 'accesstype_dropdown',
-                                                    color = 'secondary',
-                                                    label = 'Access type'
+                                                    color = 'white',
+                                                    label = 'Access type',
+                                                    size = 'sm'
                                                 )
                                             ],
                                             width = 'auto'
@@ -488,8 +499,9 @@ layout = html.Div(
                                             [
                                                 dbc.Button(
                                                     '🆇 Clear filters',
-                                                    color = 'secondary',
-                                                    id = 'clearfilters_btn'
+                                                    id = 'clearfilters_btn',
+                                                    color = 'white',
+                                                    size = 'sm'
                                                 )
                                             ],
                                             width = 'auto'
@@ -498,12 +510,13 @@ layout = html.Div(
                                             [
                                                 dbc.Button(
                                                     'Recommend deactivation',
-                                                    color = 'warning',
+                                                    color = 'danger',
                                                     id = 'deactivate_btn',
                                                     style = {
                                                         'margin-left' : 'auto',
                                                         'margin-right' : '0'
-                                                    }
+                                                    },
+                                                    size = 'sm'
                                                 )
                                             ],
                                             width = 'auto'

@@ -71,18 +71,8 @@ sidebar = dbc.Col(
         html.A(['Resource Removals'], href = '/resource/removals')
     ], width = 2,
     style = {
-        #'background-color' : '#f5f5f5',
-        #'border-radius': '25px',
-        #'border-style' : 'solid',
-        #'border-width' : '1px',
-        #'border-color' : '#ebe8e2',
-        #'filter' : 'drop-shadow(0px 0px 15px #d3d0c9)',
-        #'border-right' : '1px solid #ebe8e2',
-        #'position' : '-webkit-sticky',
-        #'position' : 'sticky',
         'margin-right' : '2em',
         'padding' : '1.5em',
-        #'min-width' : '250px'
     }
 )
 

@@ -108,6 +108,7 @@ def retrieve_record(pathname, search):
             i = 0
             library_holdings = []
             for name, group in df:
+                group = group[['Accession #', 'Call #', 'Vol. #', 'Series #', 'Circ. type', 'Status']]
                 library_holdings.append(
                     dbc.Accordion(
                         dbc.AccordionItem(

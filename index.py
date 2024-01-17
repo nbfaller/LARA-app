@@ -36,7 +36,7 @@ app.layout = html.Div(
         
         # 3) currentrole -- stores the role
         # we will not use them but if you have roles, you can use it
-        dcc.Store(id='currentrole', data = 0, storage_type='local'),
+        dcc.Store(id='currentrole', data = 0, storage_type='session'),
 
         # Page mode and user id for viewing for those that have any
         dcc.Store(id = 'page_mode', data = -1, storage_type = 'memory'),

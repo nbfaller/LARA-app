@@ -58,20 +58,20 @@ login_modal = dbc.Modal(
 
 sidebar = dbc.Col(
     [
-        html.H6(['Main']), html.Hr(),
+        html.H6(['Main'], className = 'mb-3'), html.Hr(),
         html.A(['Dashboard'], href = '/user'), html.Br(),
         html.A(['Profile'], href = '/user/profile'), html.Br(), html.Br(),
-        html.H6(['User Management']), html.Hr(),
+        html.H6(['User Management'], className = 'mb-3'), html.Hr(),
         html.A(['Search User'], href = '/user/search'), html.Br(),
         html.A(['Register User'], href = '/user/profile?mode=register'), html.Br(),
         html.A(['User Removals'], href = '/user/removals'), html.Br(), html.Br(),
-        html.H6(['Resources Management']), html.Hr(),
+        html.H6(['Resources Management'], className = 'mb-3'), html.Hr(),
         html.A(['Search Resource'], href = '/resource/search'), html.Br(),
         html.A(['Catalog Resource'], href = '/resource/catalog'), html.Br(),
-        html.A(['Resource Removals'], href = '/resource/removals'),
-        html.H6(['Circulation Management']), html.Hr(),
-        html.A(['Resources on loan'], href = '/circulation/loan'),
-        html.A(['Reservations'], href = '/circulation/reserve'),
+        html.A(['Resource Removals'], href = '/resource/removals'), html.Br(), html.Br(),
+        html.H6(['Circulation Management'], className = 'mb-3'), html.Hr(),
+        html.A(['Loaned resources'], href = '/circulation/loan'), html.Br(),
+        html.A(['Reserved resources'], href = '/circulation/reserve'),
     ], width = 2,
     style = {
         'margin-right' : '2em',

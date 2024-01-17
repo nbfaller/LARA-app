@@ -69,26 +69,36 @@ def populate_rdropdowns (pathname):
     [
         Input('url', 'pathname'),
         Input('rsearch_input', 'value'),
+        Input('rsearch_type', 'value'),
         Input('resourcetype_filter', 'value'),
         Input('subj_tier1_filter', 'value'),
         Input('language_filter', 'value')
     ]
 )
 
-def generate_resourceresults (pathname, input, type, subj, lang):
+def generate_resourceresults (pathname, input, search_type, type, subj, lang):
     if pathname == '/search' or pathname == '/resource/search':
         sql = """SELECT r.title_id AS id, r.resource_title AS title, EXTRACT(YEAR FROM r.copyright_date) AS date,
         r_t.resourcetype_name AS type, r_s1.subj_tier1_name AS subj
         FROM resourceblock.resourcetitles AS r
-        INNER JOIN utilities.resourcetype AS r_t ON r.resourcetype_id = r_t.resourcetype_id
-        INNER JOIN utilities.subjecttier1 AS r_s1 ON r.subj_tier1_id = r_s1.subj_tier1_id
+        LEFT JOIN utilities.resourcetype AS r_t ON r.resourcetype_id = r_t.resourcetype_id
+        LEFT JOIN utilities.subjecttier1 AS r_s1 ON r.subj_tier1_id = r_s1.subj_tier1_id
+        LEFT JOIN resourceblock.resourceset AS r_s ON r.title_id = r_s.title_id
+        LEFT JOIN resourceblock.resourceauthors AS r_a ON r.title_id = r_a.title_id
+        LEFT JOIN resourceblock.authors AS a ON r_a.author_id = a.author_id
         """
         values = []
         cols = ['id', 'title', 'date', 'type', 'subj']
 
+        sql_search = """SELECT searchtype_query AS query FROM utilities.searchtype WHERE searchtype_id = %s;"""
+        values_search = [search_type]
+        cols_search = ['query']
+        df_search = db.querydatafromdatabase(sql_search, values_search, cols_search)
+
         if input:
-            sql += "WHERE r.resource_title ILIKE %s"
-            values += [f"%{input}%"]
+            sql += df_search['query'][0]
+            for i in range(len(df_search['query'][0].split("WHERE (")[1].split(")")[0].split(" OR "))):
+                values += [f"%{input}%"]
 
         if type:
             sql += "AND ("
@@ -262,6 +272,8 @@ layout = html.Div(
                                         dbc.Col(
                                             dcc.Dropdown(
                                                 id = 'rsearch_type',
+                                                value = 1,
+                                                clearable = False,
                                                 placeholder = "Search by"
                                             ),
                                             md = 3,

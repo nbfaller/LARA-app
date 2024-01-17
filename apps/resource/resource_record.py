@@ -37,7 +37,7 @@ def retrieve_record(pathname, search, user_id):
         table = None
         authors = ['by ']
         parsed = urlparse(search)
-        library_holdings = [html.P("Please note that you can only borrow/reserve one copy of a resource at a time.")]
+        library_holdings = []
         if parsed.query:
             record_id = parse_qs(parsed.query)['id'][0]
 
@@ -99,6 +99,7 @@ def retrieve_record(pathname, search, user_id):
                 c_t.circtype_name AS circtype,
                 c_s.circstatus_name AS circstatus,
                 c_l.library_name AS library,
+                c.library_id AS library_id,
                 copy_callnum AS callnum
                 FROM resourceblock.resourceset AS s
                 LEFT JOIN resourceblock.resourcecopy AS c ON s.resource_id = c.resource_id
@@ -108,34 +109,40 @@ def retrieve_record(pathname, search, user_id):
                 WHERE s.title_id = %s AND c_t.circtype_id <> 5;
                 """
             values = [record_id]
-            cols = ['Accession #', 'Vol. #', 'Series #', 'Description', 'Table of contents', 'ISBN', 'ISSN', 'Copy #', 'Circ. type', 'Status', 'Library', 'Call #']
-            df = db.querydatafromdatabase(sql, values, cols)
-            df = df[['Library', 'Accession #', 'Call #', 'Vol. #', 'Series #', 'Circ. type', 'Status']].groupby('Library')
+            cols = ['Accession #', 'Vol. #', 'Series #', 'Description', 'Table of contents', 'ISBN', 'ISSN', 'Copy #', 'Circ. type', 'Status', 'Library', 'Library ID', 'Call #']
+            df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['Library ID', 'Accession #'])
+            df = df[['Library', 'Library ID', 'Accession #', 'Call #', 'Vol. #', 'Series #', 'Circ. type', 'Status']].groupby('Library ID')
             i = 0
-            # Checks reserve or borrow carts if the resource is already blocked
-            sql = """SELECT c.accession_num
-                FROM resourceblock.resourcetitles AS r_t
-                LEFT JOIN resourceblock.resourceset AS r_s ON r_t.title_id = r_s.title_id
-                LEFT JOIN resourceblock.resourcecopy AS r_c ON r_s.resource_id = r_c.resource_id
-                LEFT JOIN cartblock.borrowcart AS c ON r_c.accession_num = c.accession_num
-                WHERE r_t.title_id = %s AND c.user_id = %s AND r_c.circstatus_id = 2;"""
-            values = [record_id, user_id]
-            cols = ['accession_num']
-            df_borrow = db.querydatafromdatabase(sql, values, cols)
 
-            sql = """SELECT r.accession_num
-                FROM resourceblock.resourcetitles AS r_t
-                LEFT JOIN resourceblock.resourceset AS r_s ON r_t.title_id = r_s.title_id
-                LEFT JOIN resourceblock.resourcecopy AS r_c ON r_s.resource_id = r_c.resource_id
-                LEFT JOIN cartblock.reservecart AS r ON r_c.accession_num = r.accession_num
-                WHERE r_t.title_id = %s AND r.user_id = %s AND r_c.circstatus_id = 3;"""
-            values = [record_id, user_id]
-            cols = ['accession_num']
-            df_reserve = db.querydatafromdatabase(sql, values, cols)
+            # Checks reserve or borrow carts if the resource is already blocked
+            df_borrow = None
+            df_reserve = None
+            if user_id != -1:
+                library_holdings.append(dbc.Alert("Please note that you can only borrow/reserve one copy of a resource at a time.", is_open = True, color = 'warning'))
+                sql = """SELECT c.accession_num
+                    FROM resourceblock.resourcetitles AS r_t
+                    LEFT JOIN resourceblock.resourceset AS r_s ON r_t.title_id = r_s.title_id
+                    LEFT JOIN resourceblock.resourcecopy AS r_c ON r_s.resource_id = r_c.resource_id
+                    LEFT JOIN cartblock.borrowcart AS c ON r_c.accession_num = c.accession_num
+                    WHERE r_t.title_id = %s AND c.user_id = %s AND r_c.circstatus_id = 2;"""
+                values = [record_id, user_id]
+                cols = ['accession_num']
+                df_borrow = db.querydatafromdatabase(sql, values, cols)
+
+                sql = """SELECT r.accession_num
+                    FROM resourceblock.resourcetitles AS r_t
+                    LEFT JOIN resourceblock.resourceset AS r_s ON r_t.title_id = r_s.title_id
+                    LEFT JOIN resourceblock.resourcecopy AS r_c ON r_s.resource_id = r_c.resource_id
+                    LEFT JOIN cartblock.reservecart AS r ON r_c.accession_num = r.accession_num
+                    WHERE r_t.title_id = %s AND r.user_id = %s AND r_c.circstatus_id = 3;"""
+                values = [record_id, user_id]
+                cols = ['accession_num']
+                df_reserve = db.querydatafromdatabase(sql, values, cols)
 
             for name, group in df:
+                name = group['Library'].drop_duplicates().iloc[0]
                 if user_id != -1: buttons = []
-                group = group[['Accession #', 'Call #', 'Vol. #', 'Series #', 'Circ. type', 'Status']]
+                group = group[['Accession #', 'Call #', 'Vol. #', 'Series #', 'Circ. type', 'Status']].sort_values(by = ['Accession #'])
                 for j in group['Status'].index:
                     badge_color = 'secondary'
                     if user_id != -1:

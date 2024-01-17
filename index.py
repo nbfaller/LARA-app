@@ -77,6 +77,8 @@ def displaypage(pathname, sessionlogout, user_id,
                 returnlayout = home.layout
             elif pathname == '/search' or pathname == '/resource/search':
                 returnlayout = resource_search.layout
+            elif pathname == '/resource/record':
+                returnlayout = resource_record.layout
             elif pathname == '/about-us':
                 returnlayout = about_us.layout
             elif pathname == '/faq':
@@ -92,8 +94,6 @@ def displaypage(pathname, sessionlogout, user_id,
                     returnlayout = user_search.layout
                 elif pathname == '/user/removals':
                     returnlayout = user_removals.layout
-                elif pathname == '/resource/record':
-                    returnlayout = resource_record.layout
                 elif pathname == '/resource/catalog':
                     returnlayout = resource_catalog.layout
                 elif pathname == '/resource/search':

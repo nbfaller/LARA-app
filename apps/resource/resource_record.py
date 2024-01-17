@@ -25,11 +25,12 @@ import hashlib
         Input('url', 'pathname')
     ],
     [
-        State('url', 'search')
+        State('url', 'search'),
+        State('currentuserid', 'data')
     ]
 )
 
-def retrieve_record(pathname, search):
+def retrieve_record(pathname, search, user_id):
     if pathname == '/resource/record':
         title = 'Resource record'
         type = None
@@ -38,6 +39,8 @@ def retrieve_record(pathname, search):
         parsed = urlparse(search)
         if parsed.query:
             record_id = parse_qs(parsed.query)['id'][0]
+
+            # Title information table
             sql = """SELECT r.call_num, r.resource_title, r.resource_edition,
                 r_t.resourcetype_name, r_l.language_name, r_c.collection_name, r_p.publisher_name,
                 r.copyright_date
@@ -53,9 +56,10 @@ def retrieve_record(pathname, search):
             title = df['Title'][0]
             type = df['Resource type'][0]
             df = df[['Call number', 'Language', 'Publisher', 'Copyright date', 'Edition', 'Collection']].transpose()
-            df.insert(0, "Information", ['Call number', 'Language', 'Publisher', 'Copyright date', 'Edition', 'Collection'], True)
+            df.insert(0, "Information", [html.B('Call number'), html.B('Language'), html.B('Publisher'), html.B('Copyright date'), html.B('Edition'), html.B('Collection')], True)
+            df = df.rename(columns={'Information' : '', 0 : ''})
             table = dbc.Table.from_dataframe(
-                df, hover = True, size = 'sm',
+                df, hover = True, size = 'sm', #style = {'width' : 'auto'}
             )
 
             sql = """SELECT a.author_id AS id, a.author_lname AS lname, a.author_fname AS fname, a.author_mname AS mname
@@ -82,6 +86,7 @@ def retrieve_record(pathname, search):
                 if i < df.shape[0] - 1: authors.append(";")
                 i += 1
             
+            # Holdings information generation
             sql = """SELECT c.accession_num AS accession,
                 s.resource_volnum AS volnum,
                 s.resource_seriesnum AS seriesnum,
@@ -108,7 +113,41 @@ def retrieve_record(pathname, search):
             i = 0
             library_holdings = []
             for name, group in df:
+                if user_id != -1: buttons = []
                 group = group[['Accession #', 'Call #', 'Vol. #', 'Series #', 'Circ. type', 'Status']]
+                for j in group['Status'].index:
+                    badge_color = 'secondary'
+                    if group['Status'][j] == 'On-shelf':
+                        badge_color = 'primary'
+                        if user_id != -1: 
+                            buttons.append(
+                                html.Div(
+                                    dbc.Button(
+                                        "Borrow",
+                                        href = 'record?id=%s&borrow=%s' % (record_id, group['Accession #'][j]),
+                                        color = 'primary',
+                                        size = 'sm'
+                                    ),
+                                    #style = {'text-align' : 'center'}
+                                )
+                            )
+                    else:
+                        if user_id != -1: 
+                            buttons.append(
+                                html.Div(
+                                    dbc.Button(
+                                        "Borrow",
+                                        color = 'secondary',
+                                        size = 'sm',
+                                        disabled = True,
+                                        outline = True
+                                    ),
+                                    #style = {'text-align' : 'center'}
+                                )
+                            )
+                    #print(buttons)
+                    group.loc[j, 'Status'] = dbc.Badge(group['Status'][j], color = badge_color)
+                if user_id != -1: group['Action'] = buttons
                 library_holdings.append(
                     dbc.Accordion(
                         dbc.AccordionItem(
@@ -120,10 +159,32 @@ def retrieve_record(pathname, search):
         return [type, title, authors, table, library_holdings]
     else: raise PreventUpdate
 
+# Callback for confirming resource reservation
+@app.callback(
+    [
+        Output('reserve_modal', 'is_open'),
+        Output('reserve_modalbody', 'children')
+    ],
+    [
+        Input('url', 'pathname')
+    ],
+    [
+        State('url', 'search')
+    ]
+)
+
+def confirm_rreservation(pathname, search):
+    parsed = urlparse(search)
+    if parsed.query:
+        record_id = parse_qs(parsed.query)['id'][0]
+        reserve_id = parse_qs(parsed.query)['borrow'][0]
+        print(record_id, reserve_id)
+        return [None, None]
+    else: raise PreventUpdate
+
 layout = [
     dbc.Row(
         [
-            cm.sidebar,
             dbc.Col(
                 html.Div(
                     [
@@ -162,7 +223,7 @@ layout = [
                                 ),
                                 dbc.Col(
                                     id = 'record_table',
-                                    className = 'mb-3 col-sm-11 col-lg-9'
+                                    className = 'mb-3 col-sm-12 col-lg-10'
                                 )
                             ],
                             id = 'title_profile'
@@ -202,13 +263,29 @@ layout = [
                                             id = 'contents_profile'
                                         )
                                     ],
-                                ), width = 11
+                                ), width = 12
                             ),
                             id = 'tabs_profile'
                         )
                     ]
-                )
+                ), lg = {'size' : 10, 'offset' : 1}
             )
         ]
+    ),
+    dbc.Modal(
+        [
+            dbc.ModalHeader(html.H4('Confirm reservation')),
+            dbc.ModalBody(
+                id = 'reserve_modalbody'
+            ),
+            dbc.ModalFooter(
+                [
+                    dbc.Button(
+                        "Confirm",
+                        id = 'confirm_btn',
+                    ),
+                ]
+            )
+        ], id = 'reserve_modal'
     )
 ]

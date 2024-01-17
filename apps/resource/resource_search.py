@@ -233,7 +233,8 @@ layout = html.Div(
                             className = 'mb-3'
                         ),
                     ],
-                    width = 2,
+                    lg = 2,
+                    sm = 12,
                     style = {
                         'margin-right' : '2em',
                         'padding' : '1.5em'

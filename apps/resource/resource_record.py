@@ -2,7 +2,7 @@ from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dash import dash_table
 import dash
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, ALL
 from dash.exceptions import PreventUpdate
 from urllib.parse import urlparse, parse_qs
 
@@ -37,6 +37,7 @@ def retrieve_record(pathname, search, user_id):
         table = None
         authors = ['by ']
         parsed = urlparse(search)
+        library_holdings = []
         if parsed.query:
             record_id = parse_qs(parsed.query)['id'][0]
 
@@ -111,7 +112,6 @@ def retrieve_record(pathname, search, user_id):
             df = db.querydatafromdatabase(sql, values, cols)
             df = df[['Library', 'Accession #', 'Call #', 'Vol. #', 'Series #', 'Circ. type', 'Status']].groupby('Library')
             i = 0
-            library_holdings = []
             for name, group in df:
                 if user_id != -1: buttons = []
                 group = group[['Accession #', 'Call #', 'Vol. #', 'Series #', 'Circ. type', 'Status']]
@@ -124,9 +124,11 @@ def retrieve_record(pathname, search, user_id):
                                 html.Div(
                                     dbc.Button(
                                         "Borrow",
-                                        href = 'record?id=%s&borrow=%s' % (record_id, group['Accession #'][j]),
+                                        #href = 'record?id=%s&borrow=%s' % (record_id, group['Accession #'][j]),
                                         color = 'primary',
-                                        size = 'sm'
+                                        size = 'sm',
+                                        id = {'type' : 'borrow_btn', 'index' : j},
+                                        n_clicks = 0
                                     ),
                                     #style = {'text-align' : 'center'}
                                 )
@@ -139,6 +141,7 @@ def retrieve_record(pathname, search, user_id):
                                         "Borrow",
                                         color = 'secondary',
                                         size = 'sm',
+                                        id = {'type' : 'borrow_btn', 'index' : j},
                                         disabled = True,
                                         outline = True
                                     ),
@@ -166,24 +169,51 @@ def retrieve_record(pathname, search, user_id):
         Output('reserve_modalbody', 'children')
     ],
     [
-        Input('url', 'search')
-    ]
+        Input('url', 'pathname'),
+        Input({'type' : 'borrow_btn', 'index' : ALL}, 'n_clicks'),
+    ],
+    [
+        State('url', 'search')
+    ],
+    prevent_initial_call = True
 )
 
-def confirm_rreservation(search):
-    #print(search)
-    parsed = urlparse(search)
-    if parsed.query:
-        record_id = None
-        reserve_id = None
-        if parse_qs(parsed.query).get('id'):
-            record_id = parse_qs(parsed.query)['id'][0]
-            if parse_qs(parsed.query).get('borrow'):
-                reserve_id = parse_qs(parsed.query)['borrow'][0]
+def confirm_rreservation(pathname, btn, search):
+    if pathname == '/resource/record':
+        ctx = dash.callback_context
+        is_open = False
+        body = []
+        if ctx.triggered[-1]['value'] == None: raise PreventUpdate
+        else:
+            eventid = ctx.triggered[0]['prop_id'].split('.')[0].split(',')[1].split(':')[1][1:-2]
+            if eventid == 'borrow_btn' and btn:
+                parsed = urlparse(search)
+                record_id = None
+                reserve_id = ctx.triggered_id['index']
+                if parsed.query:
+                    if parse_qs(parsed.query).get('id'):
+                        record_id = parse_qs(parsed.query)['id'][0]
+                        is_open = True
+                        sql = """SELECT r.resource_title AS title, r.call_num AS callnum, r.resource_edition AS ed,
+                            r_t.resourcetype_name AS type, r_l.language_name AS lang, r_c.collection_id AS coll, r_p.publisher_name AS pub,
+                            r.copyright_date AS date
+                            FROM resourceblock.resourcetitles AS r
+                            LEFT JOIN utilities.resourcetype AS r_t ON r.resourcetype_id = r_t.resourcetype_id
+                            LEFT JOIN utilities.languages AS r_l ON r.language_id = r_l.language_id
+                            LEFT JOIN resourceblock.collections AS r_c ON r.collection_id  = r_c.collection_id
+                            LEFT JOIN resourceblock.publishers AS r_p ON r.publisher_id = r_p.publisher_id
+                            WHERE r.title_id = %s;
+                        """
+                        values = [record_id]
+                        cols = ['Title', 'Call number', 'Edition', 'Type', 'Language', 'Collection', 'Publisher', 'Copyright date']
+                        df = db.querydatafromdatabase(sql, values, cols)
+                        #print(df)
+                        body += [
+                            dbc.Badge(df['Type'], color = 'primary'),
+                            html.H4(df['Title']),
+                        ]
+                return [is_open, body]
             else: raise PreventUpdate
-        else: raise PreventUpdate
-        print(record_id, reserve_id)
-        return [None, None]
     else: raise PreventUpdate
 
 layout = [
@@ -280,7 +310,21 @@ layout = [
         [
             dbc.ModalHeader(html.H4('Confirm reservation')),
             dbc.ModalBody(
-                id = 'reserve_modalbody'
+                [
+                    html.P("You are seeking to borrow the following resource: "), html.Br(),
+                    html.Div(id = 'reserve_modalbody'), html.Br(),
+                    html.P(["To confirm your reservation, please click the ", html.B("Confirm"), " button below."]),
+                    html.Hr(),
+                    html.Small(
+                        [
+                            "Please note that upon reservation, the resource will be ",
+                            html.B("blocked"),
+                            " from lending ",
+                            html.B("for one hour"),
+                            ". You are advised to proceed to the library before then. Reservations that remain unborrowed by then will be forfeited and its circulation status will be reverted to on-shelf.",
+                        ]
+                    )
+                ]
             ),
             dbc.ModalFooter(
                 [
@@ -290,6 +334,10 @@ layout = [
                     ),
                 ]
             )
-        ], id = 'reserve_modal'
+        ],
+        centered = True,
+        scrollable = True,
+        id = 'reserve_modal',
+        backdrop = 'static'
     )
 ]

@@ -146,7 +146,7 @@ def generate_resourceresults (pathname, input, type, subj, lang):
                                         label = i+1,
                                         id = 'rsearch_result%s' % str(i+1)
                                     ),
-                                    className = 'p-3 col-md-1'
+                                    className = 'p-3'
                                 ),
                                 dbc.Col(
                                     dbc.CardBody(
@@ -168,7 +168,9 @@ def generate_resourceresults (pathname, input, type, subj, lang):
                                             )
                                         ]
                                     ),
-                                    className = 'col-md=8'
+                                    sm = 8,
+                                    md = 10,
+                                    #className = 'col-md-10'
                                 )
                             ],
                             className = 'g-0 d-flex align-items-center'

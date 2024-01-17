@@ -166,18 +166,22 @@ def retrieve_record(pathname, search, user_id):
         Output('reserve_modalbody', 'children')
     ],
     [
-        Input('url', 'pathname')
-    ],
-    [
-        State('url', 'search')
+        Input('url', 'search')
     ]
 )
 
-def confirm_rreservation(pathname, search):
+def confirm_rreservation(search):
+    #print(search)
     parsed = urlparse(search)
     if parsed.query:
-        record_id = parse_qs(parsed.query)['id'][0]
-        reserve_id = parse_qs(parsed.query)['borrow'][0]
+        record_id = None
+        reserve_id = None
+        if parse_qs(parsed.query).get('id'):
+            record_id = parse_qs(parsed.query)['id'][0]
+            if parse_qs(parsed.query).get('borrow'):
+                reserve_id = parse_qs(parsed.query)['borrow'][0]
+            else: raise PreventUpdate
+        else: raise PreventUpdate
         print(record_id, reserve_id)
         return [None, None]
     else: raise PreventUpdate

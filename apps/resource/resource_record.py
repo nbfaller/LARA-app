@@ -37,7 +37,7 @@ def retrieve_record(pathname, search, user_id):
         table = None
         authors = ['by ']
         parsed = urlparse(search)
-        library_holdings = []
+        library_holdings = [html.P("Please note that you can only borrow/reserve one copy of a resource at a time.")]
         if parsed.query:
             record_id = parse_qs(parsed.query)['id'][0]
 
@@ -112,14 +112,37 @@ def retrieve_record(pathname, search, user_id):
             df = db.querydatafromdatabase(sql, values, cols)
             df = df[['Library', 'Accession #', 'Call #', 'Vol. #', 'Series #', 'Circ. type', 'Status']].groupby('Library')
             i = 0
+            # Checks reserve or borrow carts if the resource is already blocked
+            sql = """SELECT c.accession_num
+                FROM resourceblock.resourcetitles AS r_t
+                LEFT JOIN resourceblock.resourceset AS r_s ON r_t.title_id = r_s.title_id
+                LEFT JOIN resourceblock.resourcecopy AS r_c ON r_s.resource_id = r_c.resource_id
+                LEFT JOIN cartblock.borrowcart AS c ON r_c.accession_num = c.accession_num
+                WHERE r_t.title_id = %s AND c.user_id = %s AND r_c.circstatus_id = 2;"""
+            values = [record_id, user_id]
+            cols = ['accession_num']
+            df_borrow = db.querydatafromdatabase(sql, values, cols)
+
+            sql = """SELECT r.accession_num
+                FROM resourceblock.resourcetitles AS r_t
+                LEFT JOIN resourceblock.resourceset AS r_s ON r_t.title_id = r_s.title_id
+                LEFT JOIN resourceblock.resourcecopy AS r_c ON r_s.resource_id = r_c.resource_id
+                LEFT JOIN cartblock.reservecart AS r ON r_c.accession_num = r.accession_num
+                WHERE r_t.title_id = %s AND r.user_id = %s AND r_c.circstatus_id = 3;"""
+            values = [record_id, user_id]
+            cols = ['accession_num']
+            df_reserve = db.querydatafromdatabase(sql, values, cols)
+            #print(df_borrow.shape[0], df_reserve.shape[0])
+
             for name, group in df:
                 if user_id != -1: buttons = []
                 group = group[['Accession #', 'Call #', 'Vol. #', 'Series #', 'Circ. type', 'Status']]
                 for j in group['Status'].index:
                     badge_color = 'secondary'
-                    if group['Status'][j] == 'On-shelf':
-                        badge_color = 'primary'
-                        if user_id != -1: 
+                    if user_id != -1:
+                        if group['Status'][j] == 'On-shelf': badge_color = 'primary'
+                        if group['Status'][j] == 'On-shelf' and (df_borrow.shape[0] == 0 and df_reserve.shape[0] == 0):
+                            badge_color = 'primary'
                             buttons.append(
                                 html.Div(
                                     dbc.Button(
@@ -133,8 +156,7 @@ def retrieve_record(pathname, search, user_id):
                                     #style = {'text-align' : 'center'}
                                 )
                             )
-                    else:
-                        if user_id != -1: 
+                        else:
                             buttons.append(
                                 html.Div(
                                     dbc.Button(
@@ -166,7 +188,8 @@ def retrieve_record(pathname, search, user_id):
 @app.callback(
     [
         Output('reserve_modal', 'is_open'),
-        Output('reserve_modalbody', 'children')
+        Output('reserve_modalbody', 'children'),
+        Output('reserve_id', 'data')
     ],
     [
         Input('url', 'pathname'),
@@ -252,26 +275,52 @@ def confirm_reservation(pathname, btn, search):
                             html.Span(authors),
                             dbc.Table.from_dataframe(table, size = 'sm')
                         ]
-                return [is_open, body]
+                return [is_open, body, reserve_id]
             else: raise PreventUpdate
     else: raise PreventUpdate
 
 # Callback for reserving a resource
 @app.callback(
     [
-        Output('reserve_success', 'is_open')
+        Output('url', 'refresh'),
+        Output('reserve_alert', 'is_open')
     ],
     [
-        Input('url', 'pathname')
+        Input('reserve_btn', 'n_clicks'),
     ],
+    [
+        State('currentuserid', 'data'),
+        State('reserve_id', 'data')
+    ],
+    prevent_initial_call = True
 )
 
-# Still doesn't work 🫶🫶🫶
-def reserve_resource(pathname):
-    print(pathname)
-    return [True]
+def reserve_resource(btn, user_id, reserve_id):
+    ctx = dash.callback_context
+    if ctx.triggered[-1]['value'] == None: raise PreventUpdate
+    else:
+        refresh = False
+        is_open = False
+        eventid = ctx.triggered[0]['prop_id'].split('.')[0]
+        if eventid == 'reserve_btn' and btn:
+            sql = """INSERT INTO cartblock.reservecart (user_id, accession_num)
+                    VALUES (%s, %s);
+                """
+            values = [user_id, reserve_id]
+            db.modifydatabase(sql, values)
+            sql = """UPDATE resourceblock.resourcecopy
+                SET circstatus_id = 3
+                WHERE accession_num = %s;"""
+            values = [reserve_id]
+            db.modifydatabase(sql, values)
+            refresh = True
+            is_open = True
+            return [refresh, is_open]
+        else: raise PreventUpdate
 
 layout = [
+    dcc.Store(id = 'reserve_id', data = -1, storage_type = 'memory'),
+    #dcc.Location(id = 'page', refresh = True),
     dbc.Row(
         [
             dbc.Col(
@@ -284,6 +333,7 @@ layout = [
                                     html.B("one hour"),
                                     "."
                                 ],
+                                id = 'reserve_alert',
                                 color = 'success',
                                 is_open = False,
                                 dismissable = True,
@@ -293,7 +343,6 @@ layout = [
                         dbc.Row(
                             dbc.Col(
                                 dbc.Badge(
-                                    "Resource type",
                                     id = 'record_type',
                                     color = 'success'
                                 )
@@ -302,7 +351,6 @@ layout = [
                         dbc.Row(
                             [
                                 html.H1(
-                                    "Resource title",
                                     id = 'record_title'
                                 )
                             ]
@@ -310,7 +358,6 @@ layout = [
                         dbc.Row(
                             [
                                 html.P(
-                                    "by authors",
                                     id = 'record_authors'
                                 )
                             ], className = 'mb-3'
@@ -400,8 +447,8 @@ layout = [
                 [
                     dbc.Button(
                         "Confirm",
-                        id = 'resourcereserve_btn',
-                        #n_clicks = 0
+                        id = 'reserve_btn',
+                        href = '#'
                     ),
                 ]
             )

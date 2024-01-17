@@ -68,7 +68,10 @@ sidebar = dbc.Col(
         html.H6(['Resources Management']), html.Hr(),
         html.A(['Search Resource'], href = '/resource/search'), html.Br(),
         html.A(['Catalog Resource'], href = '/resource/catalog'), html.Br(),
-        html.A(['Resource Removals'], href = '/resource/removals')
+        html.A(['Resource Removals'], href = '/resource/removals'),
+        html.H6(['Circulation Management']), html.Hr(),
+        html.A(['Resources on loan'], href = '/circulation/loan'),
+        html.A(['Reservations'], href = '/circulation/reserve'),
     ], width = 2,
     style = {
         'margin-right' : '2em',

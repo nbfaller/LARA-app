@@ -5,7 +5,8 @@ import dash
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import pandas as pd
-#import dash_ag_grid as dag
+from datetime import datetime
+import pytz
 
 from apps import commonmodules as cm
 from app import app
@@ -28,9 +29,11 @@ def generate_bhistory(pathname, user_id):
         table1 = "You have no borrowed resources at the moment"
         table2 = "You have no active reservations at the moment"
         table3 = "You are yet to borrow any resources. Visit the library today!"
-        sql = """SELECT c.accession_num AS accession_num, r_t.resource_title AS title,
-            TO_CHAR(c.borrow_date, 'Month dd, yyyy • HH:MI:SS AM') AS bdate,
-            TO_CHAR(c.return_date, 'Month dd, yyyy • HH:MI:SS AM') AS rdate,
+
+        # Borrowed resources
+        sql = """SELECT c.accession_num AS accession_num, r_t.resource_title AS title, r_t.title_id AS title_id,
+            TO_CHAR(c.borrow_date, 'Month dd, yyyy • HH:MI:SS AM') AS bdate, c.borrow_date AS raw_bdate,
+            TO_CHAR(c.return_date, 'Month dd, yyyy • HH:MI:SS AM') AS rdate, c.return_date AS raw_rdate,
             c_s.resourcestatus_name AS status, c.overdue_fine AS ofine, c.overdue_mins AS omins
             FROM cartblock.borrowcart AS c
             LEFT JOIN utilities.resourcestatus AS c_s ON c.resourcestatus_id = c_s.resourcestatus_id
@@ -40,14 +43,25 @@ def generate_bhistory(pathname, user_id):
             WHERE c.user_id = %s AND c.resourcestatus_id <> 2;
         """
         values = [user_id]
-        cols = ['Accession #', 'Title', 'Borrow date', 'Return date', 'Status', 'Overdue fine', 'Overdue minutes']
+        cols = ['Accession #', 'Title', 'Title ID', 'Borrow date', 'raw_bdate', 'Return date', 'raw_rdate', 'Status', 'Overdue fine', 'Overdue minutes']
         df = db.querydatafromdatabase(sql, values, cols)
+        for i in df['Title'].index:
+            df.loc[i, 'Title'] = html.A(df['Title'][i], href = '/resource/record?id=%s' % df['Title ID'][i])
+        badge_color = 'success'
+        for i in df['Status'].index:
+            remaining_time = (df['raw_rdate'][i] - datetime.now(pytz.timezone('Asia/Manila'))).total_seconds()/(60*60)
+            if remaining_time <= 1 and remaining_time >= 0: badge_color = 'warning'
+            if remaining_time < 0 or df['Status'][i] == 'Overdue': badge_color = 'danger'
+            if df['Status'][i] == 'Returned': badge_color = 'secondary'
+            df.loc[i, 'Status'] = dbc.Badge(df['Status'][i], color = badge_color)
+        df = df[['Accession #', 'Title', 'Borrow date', 'Return date', 'Status', 'Overdue fine', 'Overdue minutes']]
         if df.shape[0] > 0: table1 = dbc.Table.from_dataframe(df, hover = True, size = 'sm')
 
+        # Borrowing history
         sql = """SELECT c.accession_num AS accession_num, r_t.resource_title AS title,
             TO_CHAR(c.borrow_date, 'Month dd, yyyy • HH:MI:SS AM') AS bdate,
             TO_CHAR(c.return_date, 'Month dd, yyyy • HH:MI:SS AM') AS rdate,
-            c_s.resourcestatus_name AS status, c.overdue_fine AS ofine, c.overdue_mins AS omins
+            c.overdue_fine AS ofine, c.overdue_mins AS omins
             FROM cartblock.borrowcart AS c
             LEFT JOIN utilities.resourcestatus AS c_s ON c.resourcestatus_id = c_s.resourcestatus_id
             LEFT JOIN resourceblock.resourcecopy AS r_c ON c.accession_num = r_c.accession_num
@@ -56,7 +70,7 @@ def generate_bhistory(pathname, user_id):
             WHERE c.user_id = %s AND c.resourcestatus_id = 2;
         """
         values = [user_id]
-        cols = ['Accession #', 'Title', 'Borrow date', 'Return date', 'Status', 'Overdue fine', 'Overdue minutes']
+        cols = ['Accession #', 'Title', 'Borrow date', 'Return date', 'Overdue fine', 'Overdue minutes']
         df = db.querydatafromdatabase(sql, values, cols)
         if df.shape[0] > 0: table3 = dbc.Table.from_dataframe(df, hover = True, size = 'sm')
 

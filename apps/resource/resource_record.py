@@ -132,7 +132,6 @@ def retrieve_record(pathname, search, user_id):
             values = [record_id, user_id]
             cols = ['accession_num']
             df_reserve = db.querydatafromdatabase(sql, values, cols)
-            #print(df_borrow.shape[0], df_reserve.shape[0])
 
             for name, group in df:
                 if user_id != -1: buttons = []
@@ -241,6 +240,7 @@ def confirm_reservation(pathname, btn, search):
                             )
                             if i < df.shape[0] - 1: authors.append(";")
                             i += 1
+                        
                         # Retrieve library
                         sql = """SELECT l.library_name AS library
                             FROM resourceblock.resourcecopy AS c
@@ -250,6 +250,7 @@ def confirm_reservation(pathname, btn, search):
                         values = [reserve_id]
                         cols = ['library']
                         library = db.querydatafromdatabase(sql, values, cols)['library'][0]
+
                         # Retrieve title information
                         sql = """SELECT r.resource_title AS title, r.call_num AS callnum, r.resource_edition AS ed,
                             r_t.resourcetype_name AS type, r_l.language_name AS lang, r_c.collection_id AS coll, r_p.publisher_name AS pub,

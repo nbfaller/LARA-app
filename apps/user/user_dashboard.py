@@ -16,6 +16,7 @@ from apps import dbconnect as db
 @app.callback(
     [
         Output('active_borrows', 'children'),
+        Output('active_reserves', 'children'),
         Output('borrowing_history', 'children')
     ],
     [
@@ -57,6 +58,24 @@ def generate_bhistory(pathname, user_id):
         df = df[['Accession #', 'Title', 'Borrow date', 'Return date', 'Status', 'Overdue fine', 'Overdue minutes']]
         if df.shape[0] > 0: table1 = dbc.Table.from_dataframe(df, hover = True, size = 'sm')
 
+        # Active reservations
+        sql = """SELECT c.accession_num AS accession_num, r_t.resource_title AS title, r_t.title_id AS title_id,
+            TO_CHAR(c.reserve_time, 'Month dd, yyyy • HH:MI:SS AM') AS resdate,
+            TO_CHAR(c.revert_time, 'Month dd, yyyy • HH:MI:SS AM') AS revdate
+            FROM cartblock.reservecart AS c
+            LEFT JOIN resourceblock.resourcecopy AS r_c ON c.accession_num = r_c.accession_num
+            LEFT JOIN resourceblock.resourceset AS r_s ON r_s.resource_id = r_c.resource_id
+            LEFT JOIN resourceblock.resourcetitles AS r_t ON r_t.title_id = r_s.title_id
+            WHERE c.user_id = %s AND c.revert_time >= CURRENT_TIMESTAMP;
+        """
+        values = [user_id]
+        cols = ['Accession #', 'Title', 'Title ID', 'Reservation date', 'Revert date']
+        df = db.querydatafromdatabase(sql, values, cols)
+        for i in df['Title'].index:
+            df.loc[i, 'Title'] = html.A(df['Title'][i], href = '/resource/record?id=%s' % df['Title ID'][i])
+        df = df[['Accession #', 'Title', 'Reservation date', 'Revert date']]
+        if df.shape[0] > 0: table2 = dbc.Table.from_dataframe(df, hover = True, size = 'sm')
+
         # Borrowing history
         sql = """SELECT c.accession_num AS accession_num, r_t.resource_title AS title,
             TO_CHAR(c.borrow_date, 'Month dd, yyyy • HH:MI:SS AM') AS bdate,
@@ -67,14 +86,14 @@ def generate_bhistory(pathname, user_id):
             LEFT JOIN resourceblock.resourcecopy AS r_c ON c.accession_num = r_c.accession_num
             LEFT JOIN resourceblock.resourceset AS r_s ON r_s.resource_id = r_c.resource_id
             LEFT JOIN resourceblock.resourcetitles AS r_t ON r_t.title_id = r_s.title_id
-            WHERE c.user_id = %s AND c.resourcestatus_id = 2;
+            WHERE c.user_id = %s AND c.resourcestatus_id = 2 AND c.return_date < CURRENT_TIMESTAMP;
         """
         values = [user_id]
         cols = ['Accession #', 'Title', 'Borrow date', 'Return date', 'Overdue fine', 'Overdue minutes']
         df = db.querydatafromdatabase(sql, values, cols)
         if df.shape[0] > 0: table3 = dbc.Table.from_dataframe(df, hover = True, size = 'sm')
 
-        return [table1, table3]
+        return [table1, table2, table3]
     else: raise PreventUpdate
 
 layout = html.Div(

@@ -121,14 +121,27 @@ layout = [
                             dbc.Card(
                                 [
                                     dbc.CardImg(
-                                        src="/assets/users/default.jpg",
+                                        src="/assets/team/jon.jpg",
                                     ),
                                     dbc.CardBody(
                                         [
                                             html.H4("Jon Michael Mollasgo"),
                                             html.P("""
-                                                Lorem ipsum dolor sit amet.
-                                            """)
+                                                Jon is the team's database developer. Growing up in the province of Albay,
+                                                he is fond of eating spicy food and adoring the beauty of Mayon. He actively
+                                                participates in service- and community-oriented projects, and strongly advocates
+                                                for safe spaces for all.
+                                            """),
+                                            html.A(
+                                                html.Img(
+                                                    src = app.get_asset_url('icons/linkedin.png'),
+                                                    style = {
+                                                        'width' : '32px',
+                                                        #'filter' : 'invert(35%) sepia(91%) saturate(4733%) hue-rotate(153deg) brightness(93%) contrast(98%)'
+                                                    }
+                                                ),
+                                                href = 'https://www.linkedin.com/in/jonmollasgo/'
+                                            )
                                         ]
                                     )
                                 ]

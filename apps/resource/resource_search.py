@@ -9,6 +9,7 @@ import os
 import numpy as np
 from psycopg2.extensions import register_adapter, AsIs
 register_adapter(np.int64, AsIs)
+from urllib.parse import urlparse, parse_qs
 
 from apps import commonmodules as cm
 from app import app
@@ -23,12 +24,19 @@ from apps import dbconnect as db
         Output('language_filter', 'options')
     ],
     [
-        Input('url', 'pathname')
-    ]
+        Input('url', 'pathname'),
+        Input('url', 'search'),
+    ],
 )
 
-def populate_rdropdowns (pathname):
+def populate_rdropdowns (pathname, search):
     if pathname == '/search' or pathname == '/resource/search':
+        parsed = urlparse(search)
+        query = parse_qs(parsed.query)
+
+        values2 = None
+        values3 = None
+        
         sql = """SELECT searchtype_desc AS label, searchtype_id AS value FROM utilities.searchtype;"""
         values = []
         cols = ['label', 'value']
@@ -40,12 +48,16 @@ def populate_rdropdowns (pathname):
         cols = ['label', 'value']
         df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
         options2 = df.to_dict('records')
+        if 'resourcetype_id' in query:
+            values2 = query['resourcetype_id']
 
         sql = """SELECT subj_tier1_name AS label, subj_tier1_id AS value FROM utilities.subjecttier1;"""
         values = []
         cols = ['label', 'value']
         df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
         options3 = df.to_dict('records')
+        if 'subj_tier1_id' in query:
+            values3 = query['subj_tier1_id']
 
         sql = """SELECT library_name AS label, library_id AS value FROM utilities.libraries;"""
         values = []

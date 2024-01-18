@@ -10,6 +10,7 @@ from apps import commonmodules as cm
 from apps import home, login, about_us, faq
 from apps.user import user_dashboard, user_search, user_profile, user_removals
 from apps.resource import resource_search, resource_catalog, resource_record, resource_removals
+from apps.circulation import circulation_loans, circulation_wishlists
 
 # Layout definition
 CONTENT_STYLE = {
@@ -100,6 +101,10 @@ def displaypage(pathname, sessionlogout, user_id,
                     returnlayout = resource_search.layout
                 elif pathname == '/resource/removals':
                     returnlayout = resource_removals.layout
+                elif pathname == '/circulation/loans':
+                    returnlayout = circulation_loans.layout
+                elif pathname == '/circulation/wishlists':
+                    returnlayout = circulation_wishlists.layout
                 else:
                     returnlayout = 'Error 404: Request not found'
             else:

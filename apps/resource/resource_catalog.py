@@ -106,14 +106,91 @@ def populate_dropdowns(pathname, author_btn, publisher_btn):
     else: raise PreventUpdate
 
 # Callback for populating existing sets dropdown
-#@app.callback(
-#    [
-#        Output('existing_sets', 'options')
-#    ],
-#    [
-#        Input('url', 'pathname'),
-#    ]
-#)
+@app.callback(
+    [
+        Output('existing_sets', 'options')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('existing_titles', 'value')
+    ]
+)
+
+def populate_resourcesets(pathname, title):
+    if pathname == '/resource/catalog':
+        sets = []
+        if title:
+            sql = """SELECT CONCAT('Vol. #: ', resource_volnum, '; Series #: ', resource_seriesnum, '; ISBN/ISSN: ', resource_isbn, resource_issn) AS label,
+                resource_id AS value
+                FROM resourceblock.resourceset
+                WHERE title_id = %s;"""
+            values = [title]
+            cols = ['label', 'value']
+            df = db.querydatafromdatabase(sql, values, cols).sort_values(by = ['value'])
+            sets = df.to_dict('records')
+        return [sets]
+    else: raise PreventUpdate
+
+# Callback for populating existing sets dropdown
+@app.callback(
+    [
+        Output('resource_volnum', 'value'), Output('resource_volnum', 'disabled'),
+        Output('resource_seriesnum', 'value'), Output('resource_seriesnum', 'disabled'),
+        Output('resource_isbn', 'value'), Output('resource_isbn', 'disabled'),
+        Output('resource_issn', 'value'), Output('resource_issn', 'disabled'),
+        Output('resource_desc', 'value'), Output('resource_desc', 'disabled'),
+        Output('resource_contents', 'value'), Output('resource_contents', 'disabled'),
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('existing_titles', 'value'),
+        Input('existing_sets', 'value')
+    ]
+)
+
+def populate_resourcesets(pathname, title, set):
+    if pathname == '/resource/catalog':
+        volnum = None
+        volnum_disabled = False
+        seriesnum = None
+        seriesnum_disabled = False
+        isbn = None
+        isbn_disabled = False
+        issn = None
+        issn_disabled = False
+        desc = None
+        desc_disabled = False
+        contents = None
+        contents_disabled = False
+        if title and set:
+            sql = """SELECT resource_volnum AS volnum, resource_seriesnum AS seriesnum, resource_isbn AS isbn, resource_issn AS issn,
+                resource_desc AS desc, resource_contents AS contents
+                FROM resourceblock.resourceset
+                WHERE title_id = %s AND resource_id = %s;"""
+            values = [title, set]
+            cols = ['volnum', 'seriesnum', 'isbn', 'issn', 'desc', 'contents']
+            df = db.querydatafromdatabase(sql, values, cols) 
+            volnum = df['volnum']
+            volnum_disabled = True
+            seriesnum = df['seriesnum']
+            seriesnum_disabled = True
+            isbn = df['isbn']
+            isbn_disabled = True
+            issn = df['issn']
+            issn_disabled = True
+            desc = df['desc']
+            desc_disabled = True
+            contents = df['contents']
+            contents_disabled = True
+        return [
+            volnum, volnum_disabled,
+            seriesnum, seriesnum_disabled,
+            isbn, isbn_disabled,
+            issn, issn_disabled,
+            desc, desc_disabled,
+            contents, contents_disabled
+        ]
+    else: raise PreventUpdate
 
 # Callback for disabling inputs and setting values if title is selected
 @app.callback(

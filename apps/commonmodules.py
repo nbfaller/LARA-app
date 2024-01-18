@@ -69,9 +69,9 @@ sidebar = dbc.Col(
         html.A(['Search Resources'], href = '/resource/search'), html.Br(),
         html.A(['Catalog Resources'], href = '/resource/catalog'), html.Br(),
         html.A(['Resource Removals'], href = '/resource/removals'), html.Br(), html.Br(),
-        html.H6(['Circulation Management'], className = 'mb-3'), html.Hr(),
-        html.A(['Loaned Resources'], href = '/circulation/loan'), html.Br(),
-        html.A(['Reserved Resources'], href = '/circulation/reserve'),
+        html.H6(['Circulation'], className = 'mb-3'), html.Hr(),
+        html.A(['Loaned Resources'], href = '/circulation/loans'), html.Br(),
+        html.A(['Active Wishlists'], href = '/circulation/wishlists'),
     ], width = 2,
     style = {
         'margin-right' : '2em',

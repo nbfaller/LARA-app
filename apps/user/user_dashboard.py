@@ -62,22 +62,22 @@ def generate_bhistory(pathname, user_id):
         df = df[['Accession #', 'Title', 'Borrow date', 'Return date', 'Status', 'Overdue fine', 'Overdue minutes']]
         if df.shape[0] > 0: table1 = dbc.Table.from_dataframe(df, hover = True, size = 'sm')
 
-        # Active reservations
+        # Wishlist
         sql = """SELECT c.accession_num AS accession_num, r_t.resource_title AS title, r_t.title_id AS title_id,
             TO_CHAR(c.reserve_time, 'Month dd, yyyy • HH:MI:SS AM') AS resdate,
             TO_CHAR(c.revert_time, 'Month dd, yyyy • HH:MI:SS AM') AS revdate
-            FROM cartblock.reservecart AS c
+            FROM cartblock.wishlist AS c
             LEFT JOIN resourceblock.resourcecopy AS r_c ON c.accession_num = r_c.accession_num
             LEFT JOIN resourceblock.resourceset AS r_s ON r_s.resource_id = r_c.resource_id
             LEFT JOIN resourceblock.resourcetitles AS r_t ON r_t.title_id = r_s.title_id
             WHERE c.user_id = %s AND c.revert_time >= CURRENT_TIMESTAMP;
         """
         values = [user_id]
-        cols = ['Accession #', 'Title', 'Title ID', 'Reservation date', 'Revert date']
+        cols = ['Accession #', 'Title', 'Title ID', 'Added on', 'Expires by']
         df = db.querydatafromdatabase(sql, values, cols)
         for i in df['Title'].index:
             df.loc[i, 'Title'] = html.A(df['Title'][i], href = '/resource/record?id=%s' % df['Title ID'][i])
-        df = df[['Accession #', 'Title', 'Reservation date', 'Revert date']]
+        df = df[['Accession #', 'Title', 'Added on', 'Expires by']]
         if df.shape[0] > 0: table2 = dbc.Table.from_dataframe(df, hover = True, size = 'sm')
 
         # Borrowing history
@@ -111,7 +111,7 @@ layout = html.Div(
                         html.Hr(),
                         html.Div(
                             [
-                                html.H4("Borrowed resources"),
+                                html.H4("📚 Borrowed resources"),
                                 dbc.Card(
                                     dbc.CardBody(
                                         "You have no borrowed resources at the moment",
@@ -123,7 +123,7 @@ layout = html.Div(
                         ),
                         html.Div(
                             [
-                                html.H4("Active reservations"),
+                                html.H4("🌟 Wishlist"),
                                 dbc.Card(
                                     dbc.CardBody(
                                         "You have no active reservations at the moment",
@@ -135,7 +135,7 @@ layout = html.Div(
                         ),
                         html.Div(
                             [
-                                html.H4("Borrowing history"),
+                                html.H4("📜 Borrowing history"),
                                 dbc.Card(
                                     dbc.CardBody(
                                         id = 'borrowing_history',

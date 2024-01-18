@@ -765,6 +765,90 @@ def confirmation(btn, callnum, title, ed, type, lang, collect,
         else: raise PreventUpdate
     else: raise PreventUpdate
 
+# Callback for cataloging new resource
+@app.callback(
+    [
+        Output('catalogconfirm_alert', 'color'),
+        Output('catalogconfirm_alert', 'children'),
+        Output('catalogconfirm_alert', 'is_open'),
+    ],
+    [
+        Input('confirmcatalog_btn', 'n_clicks')
+    ],
+    [
+        # User ID
+        State('currentuserid', 'data'),
+        # Password
+        State('catalog_password', 'value'),
+        # Required values in resourceblock.resourcetitles
+        State('existing_titles', 'value'),
+        State('resource_title', 'value'),
+        State('call_num', 'value'),
+        State('resourcetype_id', 'value'),
+        State('resource_authors', 'value'),
+        State('subj_tier1_id', 'value'),
+        State('subj_tier2_id', 'value'),
+        State('subj_tier3_id', 'value'),
+        State('copyright_date', 'date'),
+        State('resource_edition', 'value'),
+        State('language_id', 'value'),
+        State('collection_id', 'value'),
+        State('publisher_id', 'value'),
+        # Required values in resourceblock.resourceset
+        State('existing_sets', 'value'),
+        State('resource_volnum', 'value'),
+        State('resource_seriesnum', 'value'),
+        State('resource_isbn', 'value'),
+        State('resource_issn', 'value'),
+        State('resource_desc', 'value'),
+        State('resource_contents', 'value'),
+        # Required values in resourceblock.resourcecopy
+        State('library_id', 'value'),
+        State('copies_total', 'value'),
+        State('copies_type1', 'value'),
+        State('copies_type2', 'value'),
+        State('copies_type3', 'value'),
+    ]
+)
+
+def catalog(btn, user_id, password,
+        existing_title, title, callnum, type, authors,
+        subjt1, subjt2, subjt3, date, ed, lang, collect, pub,
+        set, vol, series, isbn, issn, desc, contents,
+        library, copies, copiest1, copiest2, copiest3):
+    ctx = dash.callback_context
+    if ctx.triggered:
+        eventid = ctx.triggered[0]['prop_id'].split('.')[0]
+        if eventid == 'confirmcatalog_btn' and btn:
+            color = 'warning'
+            text = "Please enter your password."
+            is_open = False
+            if password == None or password == '': is_open = True
+            else:
+                sql = """SELECT user_lname AS lname
+                    FROM userblock.registereduser
+                    WHERE user_id = %s AND user_password = %s;"""
+                values = [user_id, password]
+                cols = ['lname']
+                df = db.querydatafromdatabase(sql, values, cols)
+                if df.shape[0] == 0:
+                    color = 'danger'
+                    text = "Incorrect password"
+                    is_open = True
+                else:
+                    color = 'success'
+                    text = "Resource cataloged"
+                    is_open = True
+                    if existing_title == None or existing_title == '':
+                        sql = """INSERT INTO resourceblock.resourcetitles (call_num, resource_title, resource_edition, resourcetype_id, language_id, collection_id, publisher_id,
+                            copyright_date, subj_tier1_id, subj_tier2_id, subj_tier3_id)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
+                        values = [callnum, title, ed, type, lang, collect, pub, date, subjt1, subjt2, subjt3]
+                        db.modifydatabase(sql, values)
+            return [color, text, is_open]
+        else: raise PreventUpdate
+    else: raise PreventUpdate
+
 layout = [
     dbc.Row(
         [
@@ -1333,20 +1417,20 @@ layout = [
                     html.Div(id = 'catalog_modalbody'),
                     html.Hr(),
                     dbc.Alert(
-                        id = 'confirm_alert',
+                        id = 'catalogconfirm_alert',
                         is_open = False,
                         dismissable = True,
                         duration = 5000),
                     html.H6("To catalog this resource, please enter your password."),
                     dbc.Row(
                         dbc.Col(
-                            dbc.Input(type = 'password', id = 'user_password', placeholder = 'Password')
+                            dbc.Input(type = 'password', id = 'catalog_password', placeholder = 'Password')
                         ), className = 'mb-3'
                     )
                 ]
             ),
             dbc.ModalFooter(
-                dbc.Button("Confirm", id = 'confirm_btn')
+                dbc.Button("Confirm", id = 'confirmcatalog_btn')
             )
         ],
         centered = True,

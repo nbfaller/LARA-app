@@ -34,16 +34,15 @@ def generate_bhistory(pathname, user_id):
         # Borrowed resources
         sql = """SELECT c.accession_num AS accession_num, r_t.resource_title AS title, r_t.title_id AS title_id,
             TO_CHAR(c.borrow_date, 'Month dd, yyyy • HH:MI:SS AM') AS bdate, c.borrow_date AS raw_bdate,
-            TO_CHAR(c.return_date, 'Month dd, yyyy • HH:MI:SS AM') AS rdate, c.return_date AS raw_rdate,
-            c.overdue_fine AS ofine, c.overdue_mins AS omins
+            TO_CHAR(c.return_date, 'Month dd, yyyy • HH:MI:SS AM') AS rdate, c.return_date AS raw_rdate
             FROM cartblock.borrowcart AS c
             LEFT JOIN resourceblock.resourcecopy AS r_c ON c.accession_num = r_c.accession_num
             LEFT JOIN resourceblock.resourceset AS r_s ON r_s.resource_id = r_c.resource_id
             LEFT JOIN resourceblock.resourcetitles AS r_t ON r_t.title_id = r_s.title_id
-            WHERE c.user_id = %s AND c.resourcestatus_id <> 2;
+            WHERE c.user_id = %s AND r_c.circstatus_id = 2;
         """
         values = [user_id]
-        cols = ['Accession #', 'Title', 'Title ID', 'Borrow date', 'raw_bdate', 'Return date', 'raw_rdate', 'Overdue fine', 'Overdue minutes']
+        cols = ['Accession #', 'Title', 'Title ID', 'Borrow date', 'raw_bdate', 'Return date', 'raw_rdate']
         df = db.querydatafromdatabase(sql, values, cols)
         for i in df['Title'].index:
             df.loc[i, 'Title'] = html.A(df['Title'][i], href = '/resource/record?id=%s' % df['Title ID'][i])
@@ -58,8 +57,8 @@ def generate_bhistory(pathname, user_id):
                 badge_color = 'danger'
                 badge_text = "Overdue"
             statuses.append(dbc.Badge(badge_text, color = badge_color))
-        df.insert(8, "Status", statuses, True)
-        df = df[['Accession #', 'Title', 'Borrow date', 'Return date', 'Status', 'Overdue fine', 'Overdue minutes']]
+        df.insert(7, "Status", statuses, True)
+        df = df[['Accession #', 'Title', 'Borrow date', 'Return date', 'Status']]
         if df.shape[0] > 0: table1 = dbc.Table.from_dataframe(df, hover = True, size = 'sm')
 
         # Wishlist
@@ -90,7 +89,7 @@ def generate_bhistory(pathname, user_id):
             LEFT JOIN resourceblock.resourcecopy AS r_c ON c.accession_num = r_c.accession_num
             LEFT JOIN resourceblock.resourceset AS r_s ON r_s.resource_id = r_c.resource_id
             LEFT JOIN resourceblock.resourcetitles AS r_t ON r_t.title_id = r_s.title_id
-            WHERE c.user_id = %s AND c.resourcestatus_id = 2 AND c.return_date < CURRENT_TIMESTAMP;
+            WHERE c.user_id = %s AND r_c.circstatus_id <> 2 AND c.return_date < CURRENT_TIMESTAMP;
         """
         values = [user_id]
         cols = ['Accession #', 'Title', 'Borrow date', 'Return date', 'Overdue fine', 'Overdue minutes']

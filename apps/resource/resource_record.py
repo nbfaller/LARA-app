@@ -12,6 +12,28 @@ from apps import dbconnect as db
 
 import hashlib
 
+# Callback for setting borrowstatus_id
+@app.callback(
+    [
+        Output('borrowstatus_id', 'data')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('currentuserid', 'data')
+    ]
+)
+
+def set_borrowstatus(pathname, user_id):
+    if pathname == '/resource/record':
+        if user_id:
+            sql = """SELECT borrowstatus_id AS status FROM userblock.registereduser WHERE user_id = %s;"""
+            values = [user_id]
+            cols = ['status']
+            df = db.querydatafromdatabase(sql, values, cols)
+            return [df['status'][0]]
+        else: raise PreventUpdate
+    else: raise PreventUpdate
+
 # Callback for setting record values
 @app.callback(
     [
@@ -22,7 +44,8 @@ import hashlib
         Output('holdings_profile', 'children')
     ],
     [
-        Input('url', 'pathname')
+        Input('url', 'pathname'),
+        Input('borrowstatus_id', 'data')
     ],
     [
         State('url', 'search'),
@@ -30,7 +53,7 @@ import hashlib
     ]
 )
 
-def retrieve_record(pathname, search, user_id):
+def retrieve_record(pathname, status, search, user_id):
     if pathname == '/resource/record':
         title = 'Resource record'
         type = None
@@ -137,7 +160,8 @@ def retrieve_record(pathname, search, user_id):
                     badge_color = 'secondary'
                     if user_id != -1:
                         if group['Status'][j] == 'On-shelf': badge_color = 'primary'
-                        if group['Status'][j] == 'On-shelf' and df_borrow == 0:
+                        #print(df_borrow, status)
+                        if group['Status'][j] == 'On-shelf' and df_borrow == 0 and status == 1:
                             badge_color = 'primary'
                             buttons.append(
                                 html.Div(
@@ -218,6 +242,7 @@ def reserve_resource(pathname, btn, user_id):
 
 layout = [
     dcc.Store(id = 'reserve_id', data = -1, storage_type = 'memory'),
+    dcc.Store(id = 'borrowstatus_id', storage_type = 'memory'),
     #dcc.Location(id = 'page', refresh = True),
     dbc.Row(
         [

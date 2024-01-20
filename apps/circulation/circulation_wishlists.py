@@ -47,55 +47,84 @@ def generate_wishlists(pathname):
         lname = ''
         fname = ''
         mname = ''
+        user_name = []
         users = []
-        buttons1 = []
-        buttons2 = []
+        buttons = []
         for i in df.index:
-            df.loc[i, 'Title'] = html.A(df['Title'][i], href = '/resource/record?id=%s' % df['Title ID'][i])
+            # Re-rendering titles as links
+            df.loc[i, 'Title'] = html.A(
+                df['Title'][i],
+                href = '/resource/record?id=%s' % df['Title ID'][i]
+            )
+            # Re-rendering names as links
             lname = df['lname'][i]
-            if df['livedname'][i] != None: fname = df['livedname'][i]
+            if df['livedname'][i]: fname = df['livedname'][i]
             else: fname = df['fname'][i]
-            if df['mname'][i] != None: mname = " " + df['mname'][i][0] + "."
-            else: mname = ''
-            users.append(html.A(["%s, %s%s" % (lname, fname, mname)], href = '/user/profile?mode=view&id=%s' %df['user_id'][i]))
-            buttons1.append(
-                html.Div(
-                    dbc.Button(
-                        "Lend resource",
-                        color = 'primary',
-                        size = 'sm',
-                        id = {'type' : 'lend_btn', 'index' : str(df['Accession #'][i]) + "&" + str(df['user_id'][i])},
-                        #href = '#',
-                        n_clicks = 0
-                    ),
-                    #style = {'text-align' : 'center'}
+            if df['mname'][i]: mname = " " + df['mname'][i][0] + "."
+            user_name.append("%s, %s%s" % (lname, fname, mname))
+            users.append(
+                html.A(
+                    ["%s, %s%s" % (lname, fname, mname)],
+                    href = '/user/profile?mode=view&id=%s' % df['user_id'][i]
                 )
             )
-            buttons2.append(
+            buttons.append(
                 html.Div(
                     dbc.Button(
-                        "Cancel wishlist",
+                        "Remove",
                         color = 'danger',
                         size = 'sm',
                         id = {'type' : 'cancellend_btn', 'index' : int(df['id'][i])},
                         href = '#',
                         n_clicks = 0
-                    ),
-                    #style = {'text-align' : 'center'}
+                    )
                 )
             )
         df.insert(2, "User", users, True)
-        df.insert(5, "Action", buttons1, True)
-        df.insert(6, "", buttons2, True)
+        df.insert(5, "Action", buttons, True)
+        #df.insert(6, "", buttons2, True)
+        df.insert(6, "Full name", user_name, True)
         if df.shape[0] > 0:
-            df = df.groupby('Library ID')
+            df = df.groupby('user_id')
             for name, group in df:
-                name = group['Library'].drop_duplicates().iloc[0]
-                group = group[['Accession #', 'Title', 'User', 'Added on', 'Expires by', 'Action', '']].sort_values(by = ['Added on'])
+                accession_nums = ''
+                for i in group.index:
+                    accession_nums += str(group['Accession #'][i])
+                    accession_nums += "-"
+                accession_nums = accession_nums[:-1]
+                user_id = name
+                name = group['Full name'].drop_duplicates().iloc[0] #group['User'].drop_duplicates().iloc[0]
+                group = group[['Accession #', 'Title', 'Library', 'Added on', 'Expires by', 'Action']].sort_values(by = ['Added on'])
                 tables.append(
                     dbc.Accordion(
                         dbc.AccordionItem(
-                            dbc.Table.from_dataframe(group, hover = True, size = 'sm'),
+                            [
+                                dbc.Row(
+                                    dbc.Col(
+                                        dbc.Table.from_dataframe(group, hover = True, size = 'sm')
+                                    )
+                                ),
+                                dbc.Row(
+                                    [
+                                        dbc.Col(
+                                            dbc.Button(
+                                                "Lend resources",
+                                                id = {'type' : 'lend_btn', 'index' : str(user_id) + "&" + accession_nums},
+                                                style = {'width' : '100%'}
+                                            ),
+                                        ),
+                                        dbc.Col(
+                                            dbc.Button(
+                                                "Cancel wishlist",
+                                                id = {'type' : 'cancellist_btn', 'index' : str(user_id) + "&" + accession_nums},
+                                                color = 'danger',
+                                                style = {'width' : '100%'}
+                                            ),
+                                        )
+                                    ],
+                                    justify = 'end'
+                                )
+                            ],
                             title = name
                         ), className = 'mb-3'
                     )
@@ -118,7 +147,8 @@ def generate_wishlists(pathname):
         Output('lendingconfirm_modal', 'is_open'),
         Output('lend_id', 'data'),
         Output('borrower_id', 'data'),
-        Output('lend_information', 'children')
+        Output('lend_information', 'children'),
+        Output('borrower_name', 'children')
     ],
     [
         Input('url', 'pathname'),
@@ -131,16 +161,19 @@ def confirm_lending(pathname, btn):
     if pathname == '/circulation/wishlists':
         ctx = dash.callback_context
         is_open = False
-        #print(ctx.triggered[-1]['value'])
-        if ctx.triggered[-1]['value'] == 0: raise PreventUpdate
+        if ctx.triggered[-1]['value'] == None: raise PreventUpdate
         else:
             eventid = ctx.triggered[0]['prop_id'].split('.')[0].split(',')[1].split(':')[1][1:-2]
             if eventid == 'lend_btn' and btn:
                 is_open = True
+                accession_nums = tuple(ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split('":"')[1][:-1].split("&")[1].split("-"))
                 resource_id = ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split(':')[1].split("&")[0][1:]
-                user_id = ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split(':')[1].split("&")[1][:-1]
+                user_id = ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split('":"')[1][:-1].split("&")[0]
                 info = []
-                sql = """SELECT r.resource_title AS title, r.title_id AS id, r_t.resourcetype_name AS type, r_c.copy_callnum AS callnum,
+                borrower_info = ''
+
+                # Retrieving information
+                sql = """SELECT r_c.accession_num AS accession_num, r.resource_title AS title, r.title_id AS id, r_t.resourcetype_name AS type, r_c.copy_callnum AS callnum,
                     r_l.language_name AS language, r_p.publisher_name AS publisher, r.copyright_date AS date,
                     r.resource_edition AS edition, r_col.collection_name AS collection, l.library_name AS library
                     FROM resourceblock.resourcecopy AS r_c
@@ -151,46 +184,24 @@ def confirm_lending(pathname, btn):
                     LEFT JOIN resourceblock.publishers AS r_p ON r.publisher_id = r_p.publisher_id
                     LEFT JOIN resourceblock.collections AS r_col ON r.collection_id = r_col.collection_id
                     LEFT JOIN utilities.libraries AS l ON r_c.library_id = l.library_id
-                    WHERE r_c.accession_num = %s;"""
-                values = [resource_id]
-                cols = ['Title', 'Title ID', 'Type', 'Call #', 'Language', 'Publisher', 'Copyright date', 'Edition', 'Collection', 'Library']
+                    WHERE r_c.accession_num IN %s;"""
+                values = [accession_nums]
+                cols = ['Accession #', 'Title', 'Title ID', 'Type', 'Call #', 'Language', 'Publisher', 'Copyright date', 'Edition', 'Collection', 'Library']
                 df = db.querydatafromdatabase(sql, values, cols)
-                title_id = df['Title ID'][0]
                 
-                authors = ["by "]
-                sql = """SELECT a.author_lname AS lname, a.author_fname AS fname, a.author_mname AS mname, a.author_id AS id
-                    FROM resourceblock.resourceauthors AS r
-                    LEFT JOIN resourceblock.authors AS a ON r.author_id = a.author_id
-                    WHERE r.title_id = %s;"""
-                values = [title_id]
-                cols =['lname', 'fname', 'mname', 'id']
-                df_authors = db.querydatafromdatabase(sql, values, cols)
-
-                lname = ''
-                fname = ''
-                mname = ''
-                for i in df_authors.index:
-                    lname = df_authors['lname'][i]
-                    if df_authors['fname'][i]: fname = df_authors['fname'][i]
-                    if df_authors['mname'][i]: mname = " " + df_authors['mname'][i][0] + "."
-                    authors.append(
-                        html.A(
-                            ["%s, %s%s" % (lname, fname, mname)],
-                            href = '/search?author_id=%s' % df_authors['id'][i]
-                        )
-                    )
-                    if i < df_authors.shape[0] - 2: authors.append(", ")
-                    elif i == df_authors.shape[0] - 2: authors.append(", & ")
+                for i in df['Title'].index:
+                    df.loc[i, 'Title'] = html.A(df['Title'][i], href = '/resource/record?id=%s' % df['Title ID'][i])
                 
-                info += [
-                        dbc.Badge(df['Type'][0], color = 'success', className = 'mb-1'),
-                        html.H4(df['Title'][0], className = 'mb-0'),
-                        html.Span(authors)
-                ]
+                #authors = ["by "]
+                #sql = """SELECT a.author_lname AS lname, a.author_fname AS fname, a.author_mname AS mname, a.author_id AS id
+                #    FROM resourceblock.resourceauthors AS r
+                #    LEFT JOIN resourceblock.authors AS a ON r.author_id = a.author_id
+                #    WHERE r.title_id = %s;"""
+                #values = [df['Title'][0]]
+                #cols =['lname', 'fname', 'mname', 'id']
+                #df_authors = db.querydatafromdatabase(sql, values, cols)
 
-                df = df[['Call #', 'Language', 'Publisher', 'Copyright date', 'Edition', 'Collection', 'Library']].transpose()
-                df.insert(0, "Information", [html.B('Call number'), html.B('Language'), html.B('Publisher'), html.B('Copyright date'), html.B('Edition'), html.B('Collection'), html.B('Library')], True)
-                df = df.rename(columns={'Information' : '', 0 : ''})
+                df = df[['Accession #', 'Library', 'Title', 'Type', 'Publisher', 'Copyright date', 'Edition']]
                 info += [
                     dbc.Table.from_dataframe(
                         df, hover = True, size = 'sm'#, className = 'mb-3'
@@ -211,10 +222,8 @@ def confirm_lending(pathname, btn):
                 else: fname = df['fname'][0]
                 if df['mname'][0]: mname = " " + df['mname'][0][0] + "."
                 name = "%s, %s%s" % (lname, fname, mname)
-                info += [
-                    html.P(["Will be lent to ", html.A(["%s (%s)" % (name, user_id)], href = "/user/profile?mode=view&id=%s" % user_id)], className = 'mb-0')
-                ]
-                return[is_open, resource_id, user_id, info]
+                borrower_info = html.P(["The following resources will be lent to ", html.B(html.A(["%s (%s)" % (name, user_id)], href = "/user/profile?mode=view&id=%s" % user_id)), ":"], className = 'mb-0')
+                return[is_open, accession_nums, user_id, info, borrower_info]
             else: raise PreventUpdate
     else: raise PreventUpdate
 
@@ -232,11 +241,12 @@ def confirm_lending(pathname, btn):
         State('lend_password', 'value'),
         State('borrower_id', 'data'),
         State('lend_id', 'data'),
-        State('return_duration', 'value')
+        State('return_duration', 'value'),
+        State('currentuserid', 'data')
     ]
 )
 
-def authorize_lending(btn, password, user_id, accession_num, return_date):
+def authorize_lending(btn, password, user_id, accession_num, return_date, authorizing_id):
     ctx = dash.callback_context
     if ctx.triggered:
         eventid = ctx.triggered[0]['prop_id'].split('.')[0]
@@ -260,22 +270,33 @@ def authorize_lending(btn, password, user_id, accession_num, return_date):
                     text = "Incorrect password"
                     is_open = True
                 else:
-                    sql = """INSERT INTO cartblock.borrowcart (user_id, accession_num, borrow_date, return_date, resourcestatus_id)
-                            VALUES (%s, %s, %s, %s, %s);"""
-                    values = [
-                        user_id,
-                        accession_num,
-                        datetime.now(pytz.timezone('Asia/Manila')),
-                        datetime.now(pytz.timezone('Asia/Manila')) + timedelta(days = return_date),
-                        1
-                    ]
+                    sql = """SELECT borrow_id AS id FROM cartblock.borrowcart ORDER BY borrow_id DESC LIMIT 1;"""
+                    values = []
+                    cols = ['id']
+                    df = db.querydatafromdatabase(sql, values, cols)
+                    index = 1
+                    if df.shape[0] > 0: index = df['id'][0] + 1
+                    borrow_time = datetime.now(pytz.timezone('Asia/Manila'))
+                    return_time = datetime.now(pytz.timezone('Asia/Manila')) + timedelta(days = return_date)
+                    for i in accession_num:
+                        sql = """INSERT INTO cartblock.borrowcart (borrow_id, user_id, accession_num, borrow_date, return_date, authorizing_id)
+                                VALUES (%s, %s, %s, %s, %s, %s);
+                                
+                                UPDATE resourceblock.resourcecopy
+                                SET circstatus_id = 2
+                                WHERE accession_num = %s;"""
+                        values = [index, user_id, int(i), borrow_time, return_time, authorizing_id, int(i)]
+                        #print(values)
+                        db.modifydatabase(sql, values)
+                    sql = """UPDATE userblock.registereduser
+                            SET borrowstatus_id = 2, borrowstatus_date = %s
+                            WHERE user_id = %s;"""
+                    values = [datetime.now(pytz.timezone('Asia/Manila')), user_id]
                     db.modifydatabase(sql, values)
-                    sql = """UPDATE resourceblock.resourcecopy
-                        SET circstatus_id = 2
-                        WHERE accession_num = %s;"""
-                    values = [accession_num]
-                    db.modifydatabase(sql, values)
-            return [color, text, is_open]
+            return [
+                #None, None, None
+                color, text, is_open
+            ]
         else: raise PreventUpdate
     else: raise PreventUpdate
 
@@ -302,7 +323,7 @@ def cancel_wishlists(pathname, btn):
             eventid = ctx.triggered[0]['prop_id'].split('.')[0].split(',')[1].split(':')[1][1:-2]
             if eventid == 'cancellend_btn' and btn:
                 color = 'success'
-                text = 'Wishlist cancelled.'
+                text = 'Resource removed from wishlist.'
                 is_open = True
                 wishlist_id = ctx.triggered_id['index']
                 sql = """UPDATE cartblock.wishlist
@@ -351,14 +372,29 @@ layout = html.Div(
                 dbc.ModalHeader(dbc.ModalTitle("Confirm lending")),
                 dbc.ModalBody(
                     [
-                        dbc.Card(
-                            dbc.CardBody(
-                                id = 'lend_information'
-                            ), className = 'p-3 mb-3'
+                        dbc.Row(
+                            dbc.Col(
+                                html.P(id = 'borrower_name'),
+                                width = 'auto'
+                            ), justify = 'center'
                         ),
                         dbc.Row(
-                            dbc.Col("To lend this resource, please set the return window below:"),
-                            className = 'mb-3'
+                            dbc.Col(
+                                dbc.Card(
+                                    dbc.CardBody(
+                                        id = 'lend_information'
+                                    ), className = 'p-3 m-3'
+                                )
+                            )
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                "To lend these resources, please set the return window below:",
+                                width = 'auto'
+                                #lg = {'size' : '6', 'offset' : '3'}
+                            ),
+                            className = 'mb-3',
+                            justify = 'center'
                         ),
                         dbc.Row(
                             [
@@ -372,21 +408,26 @@ layout = html.Div(
                                         ),
                                         dbc.FormText("Days")
                                     ],
-                                    width = 2
+                                    lg = 2
                                 ),
                                 dbc.Col(
                                     [
                                         html.Small("The window for returning resources is set to one (1) day by default.")
                                     ],
-                                    width = 7
+                                    lg = 3
                                 )
                             ],
                             className = 'mb-3',
                             justify = 'center'
                         ),
                         dbc.Row(
-                            dbc.Col("Finally, please enter your password to authorize the lending of this resource:"),
-                            className = 'mb-3'
+                            dbc.Col(
+                                "Finally, please enter your password to authorize the lending of these resources:",
+                                lg = 6
+                                #lg = {'size' : '6', 'offset' : '3'}
+                            ),
+                            className = 'mb-3',
+                            justify = 'center'
                         ),
                         dbc.Row(
                             dbc.Col(
@@ -394,8 +435,11 @@ layout = html.Div(
                                     id = 'lendingconfirm_alert',
                                     dismissable = True,
                                     is_open = False
-                                )
+                                ),
+                                #lg = {'size' : '6', 'offset' : '3'}
+                                width = 6
                             ),
+                            justify = 'center'
                         ),
                         dbc.Row(
                             dbc.Col(
@@ -403,9 +447,11 @@ layout = html.Div(
                                     type = 'password',
                                     id = 'lend_password',
                                     placeholder = 'Password'
-                                )
+                                ),
+                                lg = 6
                             ),
-                            className = 'mb-3'
+                            className = 'mb-3',
+                            justify = 'center'
                         )
                     ]
                 ),
@@ -414,6 +460,7 @@ layout = html.Div(
                 )
             ],
             id = 'lendingconfirm_modal',
+            size = 'lg',
             is_open = False,
             centered = True,
             scrollable = True,

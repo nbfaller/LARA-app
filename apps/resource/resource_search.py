@@ -15,6 +15,7 @@ from apps import commonmodules as cm
 from app import app
 from apps import dbconnect as db
 
+# Callback for populating dropdowns
 @app.callback(
     [
         Output('rsearch_type', 'options'),
@@ -74,6 +75,7 @@ def populate_rdropdowns (pathname, search):
         return [options1, options2, options3, options4, options5]
     else: raise PreventUpdate
 
+# Callback for generating results
 @app.callback(
     [
         Output('rsearch_results', 'children')
@@ -93,11 +95,9 @@ def generate_resourceresults (pathname, input, search_type, type, subj, lang):
         sql = """SELECT r.title_id AS id, r.resource_title AS title, EXTRACT(YEAR FROM r.copyright_date) AS date,
         r_t.resourcetype_name AS type, r_s1.subj_tier1_name AS subj
         FROM resourceblock.resourcetitles AS r
-        LEFT JOIN utilities.resourcetype AS r_t ON r.resourcetype_id = r_t.resourcetype_id
-        LEFT JOIN utilities.subjecttier1 AS r_s1 ON r.subj_tier1_id = r_s1.subj_tier1_id
-        LEFT JOIN resourceblock.resourceset AS r_s ON r.title_id = r_s.title_id
-        LEFT JOIN resourceblock.resourceauthors AS r_a ON r.title_id = r_a.title_id
-        LEFT JOIN resourceblock.authors AS a ON r_a.author_id = a.author_id
+        INNER JOIN utilities.resourcetype AS r_t ON r.resourcetype_id = r_t.resourcetype_id
+        INNER JOIN utilities.subjecttier1 AS r_s1 ON r.subj_tier1_id = r_s1.subj_tier1_id
+        INNER JOIN resourceblock.resourceset AS r_s ON r.title_id = r_s.title_id
         """
         values = []
         cols = ['id', 'title', 'date', 'type', 'subj']
@@ -146,18 +146,29 @@ def generate_resourceresults (pathname, input, search_type, type, subj, lang):
         df = db.querydatafromdatabase(sql, values, cols)
         results = []
         for i in df.index:
-            authors = ''
-            sql = """SELECT a.author_lname AS lname, a.author_fname AS fname
+            authors = ["by "]
+            sql = """SELECT a.author_lname AS lname, a.author_fname AS fname, LEFT(a.author_mname, 1) AS mname, a.author_id AS id
                 FROM resourceblock.resourceauthors as r_a
                 INNER JOIN resourceblock.authors AS a ON r_a.author_id = a.author_id
                 WHERE r_a.title_id = %s;"""
             values = [df['id'][i]]
-            cols = ['lname', 'fname']
+            cols = ['lname', 'fname', 'mname', 'id']
             df_util = db.querydatafromdatabase(sql, values, cols)
+            lname = ''
+            fname = ''
+            mname = ''
             for j in df_util.index:
-                authors += '%s, %s' % (df_util['lname'][j], df_util['fname'][j])
-                if j != len(df_util.index)-1:
-                    authors += '; '
+                lname = df_util['lname'][j]
+                if df_util['fname'][j] : fname =  df_util['fname'][j]
+                if df_util['mname'][j] : mname = " " + df_util['mname'][j] + ". "
+                authors.append(
+                    html.A(
+                        '%s, %s%s' % (lname, fname, mname),
+                        href = '/search?author_id=%s' % df_util['id'][j]
+                    )
+                )
+                if j < df_util.shape[0] - 2: authors.append(", ")
+                elif j == df_util.shape[0] - 2: authors.append(", & ")
             results.append(
                 dbc.Card(
                     [
@@ -183,7 +194,7 @@ def generate_resourceresults (pathname, input, search_type, type, subj, lang):
                                                 href = '/resource/record?id=%s' % df['id'][i],
                                                 #className = 'mb-0'
                                             ),
-                                            html.Small("by %s" % authors), html.Br(),
+                                            html.Span(authors), html.Br(),
                                             html.Small(
                                                 ["Published %s" % df['date'][i]],
                                                 className = 'card-text text-muted'

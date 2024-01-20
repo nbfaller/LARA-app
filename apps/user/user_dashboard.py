@@ -70,7 +70,7 @@ def generate_bhistory(pathname, user_id):
             LEFT JOIN resourceblock.resourcecopy AS r_c ON c.accession_num = r_c.accession_num
             LEFT JOIN resourceblock.resourceset AS r_s ON r_s.resource_id = r_c.resource_id
             LEFT JOIN resourceblock.resourcetitles AS r_t ON r_t.title_id = r_s.title_id
-            WHERE c.user_id = %s AND c.revert_time >= CURRENT_TIMESTAMP;
+            WHERE c.user_id = %s AND c.revert_time >= CURRENT_TIMESTAMP AND r_c.circstatus_id <> 2;
         """
         values = [user_id]
         cols = ['Accession #', 'Title', 'Title ID', 'Added on', 'Expires by']
@@ -109,40 +109,52 @@ layout = html.Div(
                     [
                         html.H1(['Dashboard']),
                         html.Hr(),
-                        html.Div(
-                            [
-                                html.H4("📚 Borrowed resources"),
-                                dbc.Card(
-                                    dbc.CardBody(
-                                        "You have no borrowed resources at the moment",
-                                        id = 'active_borrows',
-                                        className = 'p-3'
-                                    )
+                        dbc.Row(
+                            dbc.Col(
+                                html.Div(
+                                    [
+                                        html.H4("📚 Borrowed resources"),
+                                        dbc.Card(
+                                            dbc.CardBody(
+                                                "You have no borrowed resources at the moment",
+                                                id = 'active_borrows',
+                                                className = 'p-3'
+                                            )
+                                        )
+                                    ], className = 'mb-3'
                                 )
-                            ], className = 'mb-3'
+                            )
                         ),
-                        html.Div(
-                            [
-                                html.H4("🌟 Wishlist"),
-                                dbc.Card(
-                                    dbc.CardBody(
-                                        "You have no active reservations at the moment",
-                                        id = 'active_reserves',
-                                        className = 'p-3'
-                                    )
+                        dbc.Row(
+                            dbc.Col(
+                                html.Div(
+                                    [
+                                        html.H4("🌟 Wishlist"),
+                                        dbc.Card(
+                                            dbc.CardBody(
+                                                "You have no active reservations at the moment",
+                                                id = 'active_reserves',
+                                                className = 'p-3'
+                                            )
+                                        )
+                                    ], className = 'mb-3'
                                 )
-                            ], className = 'mb-3'
+                            )
                         ),
-                        html.Div(
-                            [
-                                html.H4("📜 Borrowing history"),
-                                dbc.Card(
-                                    dbc.CardBody(
-                                        id = 'borrowing_history',
-                                        className = 'p-3'
-                                    )
+                        dbc.Row(
+                            dbc.Col(
+                                html.Div(
+                                    [
+                                        html.H4("📜 Borrowing history"),
+                                        dbc.Card(
+                                            dbc.CardBody(
+                                                id = 'borrowing_history',
+                                                className = 'p-3'
+                                            )
+                                        )
+                                    ], className = 'mb-3'
                                 )
-                            ], className = 'mb-3'
+                            )
                         ),
                     ]
                 )

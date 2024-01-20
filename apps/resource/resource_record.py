@@ -75,16 +75,17 @@ def retrieve_record(pathname, search, user_id):
             mname = ''
             i = 0
             while i < df.shape[0]:
-                if df['lname'][0]: lname = df['lname'][0]
-                if df['fname'][0]: fname = df['fname'][0]
-                if df['mname'][0]: mname = " " + df['mname'][0][0] + "."
+                if df['lname'][i]: lname = df['lname'][i]
+                if df['fname'][i]: fname = df['fname'][i]
+                if df['mname'][i]: mname = " " + df['mname'][i][0] + "."
                 authors.append(
                     html.A(
-                        "%s, %s%s" % (lname, fname, mname),
-                        href = '/search?author_id=%s' % df['id'][0]
+                        ["%s, %s%s" % (lname, fname, mname)],
+                        href = '/search?author_id=%s' % df['id'][i]
                     )
                 )
-                if i < df.shape[0] - 1: authors.append(";")
+                if i < df.shape[0] - 2: authors.append(", ")
+                elif i == df.shape[0] - 2: authors.append(", & ")
                 i += 1
             
             # Holdings information generation

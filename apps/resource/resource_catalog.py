@@ -825,11 +825,12 @@ def catalog(btn, user_id, password,
             is_open = False
             if password == None or password == '': is_open = True
             else:
-                sql = """SELECT user_lname AS lname
+                encrypt_string = lambda string: hashlib.sha256(string.encode('utf-8')).hexdigest()
+                sql = """SELECT user_id AS id
                     FROM userblock.registereduser
                     WHERE user_id = %s AND user_password = %s;"""
-                values = [user_id, password]
-                cols = ['lname']
+                values = [user_id, encrypt_string(password)]
+                cols = ['id']
                 df = db.querydatafromdatabase(sql, values, cols)
                 if df.shape[0] == 0:
                     color = 'danger'
@@ -839,12 +840,131 @@ def catalog(btn, user_id, password,
                     color = 'success'
                     text = "Resource cataloged"
                     is_open = True
-                    if existing_title == None or existing_title == '':
+                    title_id = existing_title
+                    resource_id = set
+                    if title_id == None or title_id == '':
+                        # Create new title
                         sql = """INSERT INTO resourceblock.resourcetitles (call_num, resource_title, resource_edition, resourcetype_id, language_id, collection_id, publisher_id,
                             copyright_date, subj_tier1_id, subj_tier2_id, subj_tier3_id)
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);"""
                         values = [callnum, title, ed, type, lang, collect, pub, date, subjt1, subjt2, subjt3]
                         db.modifydatabase(sql, values)
+                        # Get id of new title
+                        sql = """SELECT title_id AS id
+                            FROM resourceblock.resourcetitles
+                            ORDER BY title_id DESC
+                            LIMIT 1;"""
+                        values = []
+                        cols = ['id']
+                        title_id = db.querydatafromdatabase(sql, values, cols)['id'][0]
+
+                        # Authors
+                        sql = """INSERT INTO resourceblock.resourceauthors (title_id, author_id) VALUES (%s, %s);"""
+                        for i in authors:
+                            values = [title_id, i]
+                            db.modifydatabase(sql, values)
+
+                        # Create new set
+                        sql = """INSERT INTO resourceblock.resourceset (resource_volnum, resource_seriesnum, title_id, resource_desc, resource_contents, resource_isbn, resource_issn)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+                        values = [vol, series, title_id, desc, contents, isbn, issn]
+                        db.modifydatabase(sql, values)
+                        # Get id of new set
+                        sql = """SELECT resource_id AS id
+                            FROM resourceblock.resourceset
+                            WHERE title_id = %s
+                            ORDER BY title_id DESC
+                            LIMIT 1;"""
+                        values = [title_id]
+                        cols = ['id']
+                        resource_id = db.querydatafromdatabase(sql, values, cols)['id'][0]
+
+                        # Create copies
+                        i = 1
+                        sql = """INSERT INTO resourceblock.resourcecopy (resource_id, resource_copynum, library_id, copy_callnum)
+                            VALUES (%s, %s, %s, %s);"""
+                        while i <= copiest1:
+                            values = [resource_id, i, library, callnum]
+                            db.modifydatabase(sql, values)
+                            i += 1
+                        sql = """INSERT INTO resourceblock.resourcecopy (resource_id, resource_copynum, circtype_id, library_id, copy_callnum)
+                            VALUES (%s, %s, %s, %s, %s);"""
+                        while i <= copiest1 + copiest2:
+                            values = [resource_id, i, 2, library, callnum]
+                            db.modifydatabase(sql, values)
+                            i += 1
+                        sql = """INSERT INTO resourceblock.resourcecopy (resource_id, resource_copynum, circtype_id, circstatus_id, library_id, copy_callnum)
+                            VALUES (%s, %s, %s, %s, %s, %s);"""
+                        while i <= copies:
+                            values = [resource_id, i, 3, 3, library, "R-"+callnum]
+                            db.modifydatabase(sql, values)
+                            i += 1
+                    else:
+                        if resource_id == None or resource_id == '':
+                            # Create new set
+                            sql = """INSERT INTO resourceblock.resourceset (resource_volnum, resource_seriesnum, title_id, resource_desc, resource_contents, resource_isbn, resource_issn)
+                                VALUES (%s, %s, %s, %s, %s, %s, %s)"""
+                            values = [vol, series, title_id, desc, contents, isbn, issn]
+                            db.modifydatabase(sql, values)
+                            # Get id of new set
+                            sql = """SELECT resource_id AS id
+                                FROM resourceblock.resourceset
+                                WHERE title_id = %s
+                                ORDER BY title_id DESC
+                                LIMIT 1;"""
+                            values = [title_id]
+                            cols = ['id']
+                            resource_id = db.querydatafromdatabase(sql, values, cols)['id'][0]
+
+                            # Create copies
+                            i = 1
+                            sql = """INSERT INTO resourceblock.resourcecopy (resource_id, resource_copynum, library_id, copy_callnum)
+                                VALUES (%s, %s, %s, %s);"""
+                            while i <= copiest1:
+                                values = [resource_id, i, library, callnum]
+                                db.modifydatabase(sql, values)
+                                i += 1
+                            sql = """INSERT INTO resourceblock.resourcecopy (resource_id, resource_copynum, circtype_id, library_id, copy_callnum)
+                                VALUES (%s, %s, %s, %s, %s);"""
+                            while i <= copiest1 + copiest2:
+                                values = [resource_id, i, 2, library, callnum]
+                                db.modifydatabase(sql, values)
+                                i += 1
+                            sql = """INSERT INTO resourceblock.resourcecopy (resource_id, resource_copynum, circtype_id, circstatus_id, library_id, copy_callnum)
+                                VALUES (%s, %s, %s, %s, %s, %s);"""
+                            while i <= copies:
+                                values = [resource_id, i, 3, 3, library, "R-"+callnum]
+                                db.modifydatabase(sql, values)
+                                i += 1
+                        else:
+                            sql = """SELECT resource_copynum AS i
+                                FROM resourceblock.resourcecopy
+                                WHERE resource_id = %s AND library_id = %s
+                                ORDER BY resource_copynum DESC
+                                LIMIT 1;"""
+                            values = [resource_id, library]
+                            cols = ['i']
+                            df = db.querydatafromdatabase(sql, values, cols)
+                            if df.shape[0] > 0: i = df['i'][0]
+                            else: i = 1
+                            sql = """INSERT INTO resourceblock.resourcecopy (resource_id, resource_copynum, library_id, copy_callnum)
+                                VALUES (%s, %s, %s, %s);"""
+                            while i <= copiest1:
+                                values = [resource_id, i, library, callnum]
+                                db.modifydatabase(sql, values)
+                                i += 1
+                            sql = """INSERT INTO resourceblock.resourcecopy (resource_id, resource_copynum, circtype_id, library_id, copy_callnum)
+                                VALUES (%s, %s, %s, %s, %s);"""
+                            while i <= copiest1 + copiest2:
+                                values = [resource_id, i, 2, library, callnum]
+                                db.modifydatabase(sql, values)
+                                i += 1
+                            sql = """INSERT INTO resourceblock.resourcecopy (resource_id, resource_copynum, circtype_id, circstatus_id, library_id, copy_callnum)
+                                VALUES (%s, %s, %s, %s, %s, %s);"""
+                            while i <= copies:
+                                values = [resource_id, i, 3, 3, library, "R-"+callnum]
+                                db.modifydatabase(sql, values)
+                                i += 1
             return [color, text, is_open]
         else: raise PreventUpdate
     else: raise PreventUpdate

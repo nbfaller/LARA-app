@@ -30,14 +30,14 @@ app.layout = html.Div(
         # LOGIN DATA
         # 1) logout indicator, storage_type='session' means that data will be retained
         #  until browser/tab is closed (vs clearing data upon refresh)
-        dcc.Store(id='sessionlogout', data = True, storage_type='session'),
+        dcc.Store(id='sessionlogout', data = True, storage_type='local'),
         
         # 2) current_user_id -- stores user_id
-        dcc.Store(id='currentuserid', data = -1, storage_type='session'),
+        dcc.Store(id='currentuserid', data = -1, storage_type='local'),
         
         # 3) currentrole -- stores the role
         # we will not use them but if you have roles, you can use it
-        dcc.Store(id='currentrole', data = 0, storage_type='session'),
+        dcc.Store(id='currentrole', data = 0, storage_type='local'),
 
         # Page mode and user id for viewing for those that have any
         dcc.Store(id = 'page_mode', data = -1, storage_type = 'memory'),

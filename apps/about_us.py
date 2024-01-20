@@ -102,14 +102,27 @@ layout = [
                             dbc.Card(
                                 [
                                     dbc.CardImg(
-                                        src="/assets/users/default.jpg",
+                                        src="/assets/team/bon.jpg",
                                     ),
                                     dbc.CardBody(
                                         [
                                             html.H4("John Patrick Bonayon"),
                                             html.P("""
-                                                Lorem ipsum dolor sit amet.
-                                            """)
+                                                Patrick is a back-end developer for the project. Growing up in the quiet city of Marikina,
+                                                he grew up admiring the vibrant history of his hometown. He advocates for free education
+                                                for all, believing that everyone should have access to knowledge and opportunities
+                                                regardless of their financial status.
+                                            """),
+                                            html.A(
+                                                html.Img(
+                                                    src = app.get_asset_url('icons/linkedin.png'),
+                                                    style = {
+                                                        'width' : '32px',
+                                                        #'filter' : 'invert(35%) sepia(91%) saturate(4733%) hue-rotate(153deg) brightness(93%) contrast(98%)'
+                                                    }
+                                                ),
+                                                href = 'https://www.linkedin.com/in/john-patrick-bonayon'
+                                            )
                                         ]
                                     )
                                 ]
@@ -188,16 +201,17 @@ layout = [
             html.P(
                 [
                     "This project was also made possible through the guidance and instruction of ",
-                    html.A("Carlo Angelo Sonday", href = "https://ieor.engg.upd.edu.ph/people/faculty/assistant-professor/carlo-angelo-a-sonday/"),
+                    html.B(html.A("Carlo Angelo Sonday", href = "https://ieor.engg.upd.edu.ph/people/faculty/assistant-professor/carlo-angelo-a-sonday/")),
                     " and ",
-                    html.A("Pierre Allan Villena", href = "https://ieor.engg.upd.edu.ph/people/faculty/assistant-professor/pierre-allan-c-villena/"),
+                    html.B(html.A("Pierre Allan Villena", href = "https://ieor.engg.upd.edu.ph/people/faculty/assistant-professor/pierre-allan-c-villena/")),
                     ", assistant professors at the UPD IEORD."
                 ]
             ),
         ],
-        style = {
-            'padding-left' : '4em',
-            'padding-right' : '4em'
-        }
+        #style = {
+        #    'padding-left' : '4em',
+        #    'padding-right' : '4em'
+        #}
+        className = "px-md-4"
     )
 ]

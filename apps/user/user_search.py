@@ -5,8 +5,11 @@ import dash
 from dash.dependencies import Input, Output, State, ALL
 from dash.exceptions import PreventUpdate
 import pandas as pd
+from datetime import datetime, timedelta
+import pytz
 import os
 import math
+import hashlib
 
 from apps import commonmodules as cm
 from app import app
@@ -412,6 +415,57 @@ def confirm_recdeac(pathname, btn):
             else: raise PreventUpdate
     else: raise PreventUpdate
 
+# Callback for recommending user deactivation
+@app.callback(
+    [
+        Output('recdeac_alert', 'color'),
+        Output('recdeac_alert', 'children'),
+        Output('recdeac_alert', 'is_open'),
+    ],
+    [
+        Input('confirmrecdeac_btn', 'n_clicks')
+    ],
+    [
+        State('currentuserid', 'data'),
+        State('recdeac_password', 'value'),
+        State('recdeac_id', 'data'),
+    ]
+)
+
+def recommend_deactivation(btn, user_id, password, recdeac_id):
+    ctx = dash.callback_context
+    if ctx.triggered:
+        eventid = ctx.triggered[0]['prop_id'].split('.')[0]
+        if eventid == 'confirmrecdeac_btn' and btn:
+            color = 'success'
+            text = 'User has been recommended for deactivation.'
+            is_open = True
+            if not password or password == '':
+                color = 'warning'
+                text = 'Please enter your password.'
+            else:
+                encrypt_string = lambda string: hashlib.sha256(string.encode('utf-8')).hexdigest()
+                sql = """SELECT user_id AS id
+                    FROM userblock.registereduser
+                    WHERE user_id = %s AND user_password = %s;"""
+                values = [user_id, encrypt_string(password)]
+                cols = ['id']
+                df = db.querydatafromdatabase(sql, values, cols)
+                if df.shape[0] == 0:
+                    color = 'danger'
+                    text = "Incorrect password"
+                    is_open = True
+                else:
+                    sql = """UPDATE userblock.registereduser
+                        SET userstatus_id = 3, userstatus_date = %s
+                        WHERE user_id = %s;"""
+                    values = [datetime.now(pytz.timezone('Asia/Manila')), recdeac_id]
+                    db.modifydatabase(sql, values)
+            return [color, text, is_open]
+        else: raise PreventUpdate
+    else: raise PreventUpdate
+
+# Callback for activating dropdown colors and badges
 @app.callback(
     [
         Output('usertype_dropdown', 'color'),

@@ -264,6 +264,7 @@ def confirm_return(pathname, btn):
     ],
     [
         State('return_password', 'value'),
+        State('currentuserid', 'data'),
         State('returner_id', 'data'),
         State('borrow_id', 'data'),
         State('is_penalty', 'data'),
@@ -274,7 +275,7 @@ def confirm_return(pathname, btn):
     ]
 )
 
-def authorize_returns(btn, password, user_id, borrow_id,
+def authorize_returns(btn, password, user_id, returner_id, borrow_id,
                       is_penalty, penalty_peso, penalty_mins, penalty_option,
                       eligiblity):
     ctx = dash.callback_context
@@ -327,7 +328,7 @@ def authorize_returns(btn, password, user_id, borrow_id,
                             UPDATE userblock.registereduser
                             SET borrowstatus_id = 1
                             WHERE user_id = %s;"""
-                        values += [borrow_id, user_id]
+                        values += [borrow_id, returner_id]
                         db.modifydatabase(sql, values)
             return [color, text, is_open]
         else: raise PreventUpdate

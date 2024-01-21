@@ -56,27 +56,46 @@ login_modal = dbc.Modal(
 
 # ---------------------------------------- SIDEBAR ----------------------------------------
 
-sidebar = dbc.Col(
+@app.callback(
     [
-        html.H6(['Main'], className = 'mb-0'), html.Hr(),
-        html.A(['Dashboard'], href = '/user'), html.Br(),
-        html.A(['Profile'], href = '/user/profile'), html.Br(), html.Br(),
-        html.H6(['Circulation'], className = 'mb-0'), html.Hr(),
-        html.A(['Loaned Resources'], href = '/circulation/loans'), html.Br(),
-        html.A(['Active Wishlists'], href = '/circulation/wishlists'), html.Br(), html.Br(),
-        html.H6(['Resources Management'], className = 'mb-0'), html.Hr(),
-        html.A(['Search Resources'], href = '/resource/search'), html.Br(),
-        html.A(['Catalog Resources'], href = '/resource/catalog'), html.Br(),
-        html.A(['Resource Removals'], href = '/resource/removals'), html.Br(), html.Br(),
-        html.H6(['User Management'], className = 'mb-0'), html.Hr(),
-        html.A(['Search User'], href = '/user/search'), html.Br(),
-        html.A(['Register User'], href = '/user/profile?mode=register'), html.Br(),
-        html.A(['User Removals'], href = '/user/removals')
-    ], width = 2,
+        Output('sidebar', 'children')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('currentuserid', 'data'),
+        Input('currentrole', 'data')
+    ]
+)
+
+def generate_sidebar(pathname, user_id, access_type):
+    if user_id != -1:
+        sidebar = [
+            html.H6(['Main'], className = 'mb-0'), html.Hr(),
+            html.A(['Dashboard'], href = '/user'), html.Br(),
+            html.A(['Profile'], href = '/user/profile'), html.Br(), html.Br(),
+        ]
+        if access_type >= 2:
+            sidebar += [
+                html.H6(['Circulation'], className = 'mb-0'), html.Hr(),
+                html.A(['Loaned Resources'], href = '/circulation/loans'), html.Br(),
+                html.A(['Active Wishlists'], href = '/circulation/wishlists'), html.Br(), html.Br(),
+                html.H6(['Resources Management'], className = 'mb-0'), html.Hr(),
+                html.A(['Search Resources'], href = '/resource/search'), html.Br(),
+                html.A(['Catalog Resources'], href = '/resource/catalog'), html.Br(), html.Br(),
+                html.H6(['User Management'], className = 'mb-0'), html.Hr(),
+                html.A(['Search User'], href = '/user/search'), html.Br(),
+                html.A(['Register User'], href = '/user/profile?mode=register'), html.Br(),
+            ]
+        return [sidebar]
+    else: raise PreventUpdate
+
+sidebar = dbc.Col(
+    width = 2,
     style = {
         'margin-right' : '2em',
         'padding' : '1.5em',
-    }
+    },
+    id = 'sidebar'
 )
 
 # ---------------------------------------- NAVBAR ----------------------------------------

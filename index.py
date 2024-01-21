@@ -4,6 +4,7 @@ import dash
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import webbrowser
+from urllib.parse import urlparse, parse_qs
 
 from app import app
 from apps import commonmodules as cm
@@ -54,6 +55,8 @@ app.layout = html.Div(
     [
         Output('page-content', 'children'),
         Output('sessionlogout', 'data'),
+        #Output('currentuserid', 'data'),
+        #Output('currentrole', 'data')
     ],
     [
         Input('url', 'pathname')
@@ -61,15 +64,16 @@ app.layout = html.Div(
     [
         State('sessionlogout', 'data'),
         State('currentuserid', 'data'),
-        #State('page_mode', 'data'),
-        #State('view_id', 'data')
+        State('currentrole', 'data'),
+        State('url', 'search')
     ]
 )
 
-def displaypage(pathname, sessionlogout, user_id,
-        #mode, view_id
-    ):
-    #print(mode)
+def displaypage(pathname, sessionlogout, user_id, accesstype, search):
+    mode = None
+    parsed = urlparse(search)
+    if parse_qs(parsed.query):
+        mode = parse_qs(parsed.query)['mode'][0]
     ctx = dash.callback_context
     if ctx.triggered:
         eventid = ctx.triggered[0]['prop_id'].split('.')[0]
@@ -86,27 +90,37 @@ def displaypage(pathname, sessionlogout, user_id,
                 returnlayout = faq.py
             elif pathname == '/login':
                 returnlayout = login.layout
-            elif user_id != -1: 
-                if pathname == '/user' or pathname == '/user/dashboard':
-                    returnlayout = user_dashboard.layout
-                elif pathname == '/user/profile':
-                    returnlayout = user_profile.layout
-                elif pathname == '/user/search':
-                    returnlayout = user_search.layout
-                elif pathname == '/user/removals':
-                    returnlayout = user_removals.layout
-                elif pathname == '/resource/catalog':
-                    returnlayout = resource_catalog.layout
-                elif pathname == '/resource/search':
-                    returnlayout = resource_search.layout
-                elif pathname == '/resource/removals':
-                    returnlayout = resource_removals.layout
-                elif pathname == '/circulation/loans':
-                    returnlayout = circulation_loans.layout
-                elif pathname == '/circulation/wishlists':
-                    returnlayout = circulation_wishlists.layout
+            elif user_id != -1:
+                if accesstype >= 1:
+                    if pathname == '/user' or pathname == '/user/dashboard':
+                        returnlayout = user_dashboard.layout
+                    elif pathname == '/user/profile' and mode != 'register':
+                        returnlayout = user_profile.layout
+                    else:
+                        returnlayout = 'Error 404: Request not found'
+                elif accesstype == 2:
+                    if pathname == '/user/search':
+                        returnlayout = user_search.layout
+                    elif pathname == '/resource/catalog':
+                        returnlayout = resource_catalog.layout
+                    elif pathname == '/circulation/loans':
+                        returnlayout = circulation_loans.layout
+                    elif pathname == '/circulation/wishlists':
+                        returnlayout = circulation_wishlists.layout
+                    else:
+                        returnlayout = 'Error 403: Forbidden'
+                elif accesstype == 3 or accesstype == 5:
+                    if pathname == '/user/removals':
+                        returnlayout = user_removals.layout
+                    else:
+                        returnlayout = 'Error 403: Forbidden'
+                elif accesstype == 4:
+                    if pathname == '/resource/removals':
+                        returnlayout = resource_removals.layout
+                    else:
+                        returnlayout = 'Error 403: Forbidden'
                 else:
-                    returnlayout = 'Error 404: Request not found'
+                    returnlayout = 'Error 403: Forbidden'
             else:
                 returnlayout = 'Error 404: Request not found'
             # decide sessionlogout value
@@ -116,10 +130,11 @@ def displaypage(pathname, sessionlogout, user_id,
                 not user_id
             ]
             sessionlogout = any(logout_conditions)
-            #print(sessionlogout)
         else:
             raise PreventUpdate
-        return [returnlayout, sessionlogout]
+        return [returnlayout, sessionlogout,
+                #user_id, accesstype
+            ]
     else:
         raise PreventUpdate
 

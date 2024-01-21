@@ -88,10 +88,14 @@ def generate_wishlists(pathname):
             df = df.groupby('user_id')
             for name, group in df:
                 accession_nums = ''
+                wishlist_id = ''
                 for i in group.index:
                     accession_nums += str(group['Accession #'][i])
                     accession_nums += "-"
+                    wishlist_id += str(group['id'][i])
+                    wishlist_id += "-"
                 accession_nums = accession_nums[:-1]
+                wishlist_id = wishlist_id[:-1]
                 user_id = name
                 name = group['Full name'].drop_duplicates().iloc[0] #group['User'].drop_duplicates().iloc[0]
                 group = group[['Accession #', 'Title', 'Library', 'Added on', 'Expires by', 'Action']].sort_values(by = ['Added on'])
@@ -109,14 +113,14 @@ def generate_wishlists(pathname):
                                         dbc.Col(
                                             dbc.Button(
                                                 "Lend resources",
-                                                id = {'type' : 'lend_btn', 'index' : str(user_id) + "&" + accession_nums},
+                                                id = {'type' : 'lend_btn', 'index' : str(user_id) + "&" + accession_nums + "&" + wishlist_id},
                                                 style = {'width' : '100%'}
                                             ),
                                         ),
                                         dbc.Col(
                                             dbc.Button(
                                                 "Cancel wishlist",
-                                                id = {'type' : 'cancellist_btn', 'index' : str(user_id) + "&" + accession_nums},
+                                                id = {'type' : 'cancellist_btn', 'index' : str(user_id) + "&" + accession_nums + "&" + str(wishlist_id)},
                                                 color = 'danger',
                                                 style = {'width' : '100%'}
                                             ),
@@ -145,6 +149,7 @@ def generate_wishlists(pathname):
 @app.callback(
     [
         Output('lendingconfirm_modal', 'is_open'),
+        Output('wishlist_id', 'data'),
         Output('lend_id', 'data'),
         Output('borrower_id', 'data'),
         Output('lend_information', 'children'),
@@ -166,9 +171,9 @@ def confirm_lending(pathname, btn):
             eventid = ctx.triggered[0]['prop_id'].split('.')[0].split(',')[1].split(':')[1][1:-2]
             if eventid == 'lend_btn' and btn:
                 is_open = True
-                accession_nums = tuple(ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split('":"')[1][:-1].split("&")[1].split("-"))
-                resource_id = ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split(':')[1].split("&")[0][1:]
                 user_id = ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split('":"')[1][:-1].split("&")[0]
+                accession_nums = tuple([int(i) for i in ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split('":"')[1][:-1].split("&")[1].split("-")])
+                wishlist_ids = tuple([int(i) for i in ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split(':')[1].split("&")[2][:-1].split("-")])
                 info = []
                 borrower_info = ''
 
@@ -201,7 +206,7 @@ def confirm_lending(pathname, btn):
                 #cols =['lname', 'fname', 'mname', 'id']
                 #df_authors = db.querydatafromdatabase(sql, values, cols)
 
-                df = df[['Accession #', 'Library', 'Title', 'Type', 'Publisher', 'Copyright date', 'Edition']]
+                df = df[['Accession #', 'Call #', 'Library', 'Title', 'Type', 'Publisher', 'Copyright date', 'Edition']]
                 info += [
                     dbc.Table.from_dataframe(
                         df, hover = True, size = 'sm'#, className = 'mb-3'
@@ -223,7 +228,7 @@ def confirm_lending(pathname, btn):
                 if df['mname'][0]: mname = " " + df['mname'][0][0] + "."
                 name = "%s, %s%s" % (lname, fname, mname)
                 borrower_info = html.P(["The following resources will be lent to ", html.B(html.A(["%s (%s)" % (name, user_id)], href = "/user/profile?mode=view&id=%s" % user_id)), ":"], className = 'mb-0')
-                return[is_open, accession_nums, user_id, info, borrower_info]
+                return[is_open, wishlist_ids, accession_nums, user_id, info, borrower_info]
             else: raise PreventUpdate
     else: raise PreventUpdate
 
@@ -242,11 +247,12 @@ def confirm_lending(pathname, btn):
         State('borrower_id', 'data'),
         State('lend_id', 'data'),
         State('return_duration', 'value'),
-        State('currentuserid', 'data')
+        State('currentuserid', 'data'),
+        State('wishlist_id', 'data')
     ]
 )
 
-def authorize_lending(btn, password, user_id, accession_num, return_date, authorizing_id):
+def authorize_lending(btn, password, user_id, accession_num, return_date, authorizing_id, wishlist_ids):
     ctx = dash.callback_context
     if ctx.triggered:
         eventid = ctx.triggered[0]['prop_id'].split('.')[0]
@@ -286,12 +292,15 @@ def authorize_lending(btn, password, user_id, accession_num, return_date, author
                                 SET circstatus_id = 2
                                 WHERE accession_num = %s;"""
                         values = [index, user_id, int(i), borrow_time, return_time, authorizing_id, int(i)]
-                        #print(values)
                         db.modifydatabase(sql, values)
                     sql = """UPDATE userblock.registereduser
                             SET borrowstatus_id = 2, borrowstatus_date = %s
-                            WHERE user_id = %s;"""
-                    values = [datetime.now(pytz.timezone('Asia/Manila')), user_id]
+                            WHERE user_id = %s;
+                            
+                            UPDATE cartblock.wishlist
+                            SET revert_time = %s
+                            WHERE wishlist_id IN %s;"""
+                    values = [datetime.now(pytz.timezone('Asia/Manila')), user_id, datetime.now(pytz.timezone('Asia/Manila')), tuple(wishlist_ids)]
                     db.modifydatabase(sql, values)
             return [
                 #None, None, None
@@ -337,6 +346,7 @@ def cancel_wishlists(pathname, btn):
 
 layout = html.Div(
     [
+        dcc.Store(id = 'wishlist_id', storage_type = 'memory'),
         dcc.Store(id = 'lend_id', storage_type = 'memory'),
         dcc.Store(id = 'borrower_id', storage_type = 'memory'),
         dbc.Row(
@@ -374,7 +384,7 @@ layout = html.Div(
                     [
                         dbc.Row(
                             dbc.Col(
-                                html.P(id = 'borrower_name'),
+                                html.Span(id = 'borrower_name'),
                                 width = 'auto'
                             ), justify = 'center'
                         ),
@@ -383,7 +393,7 @@ layout = html.Div(
                                 dbc.Card(
                                     dbc.CardBody(
                                         id = 'lend_information'
-                                    ), className = 'p-3 m-3'
+                                    ), className = 'my-3 p-3'
                                 )
                             )
                         ),
@@ -437,7 +447,7 @@ layout = html.Div(
                                     is_open = False
                                 ),
                                 #lg = {'size' : '6', 'offset' : '3'}
-                                width = 6
+                                lg = 6
                             ),
                             justify = 'center'
                         ),
@@ -464,7 +474,8 @@ layout = html.Div(
             is_open = False,
             centered = True,
             scrollable = True,
-            backdrop = 'static'
+            backdrop = 'static',
+            className = 'p-3'
         )
     ]
 )

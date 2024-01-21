@@ -41,7 +41,7 @@ def generate_loans(pathname):
             LEFT JOIN resourceblock.resourcetitles AS r_t ON r_t.title_id = r_s.title_id
             LEFT JOIN userblock.registereduser AS u ON c.user_id = u.user_id
             LEFT JOIN utilities.libraries AS r_l ON r_c.library_id = r_l.library_id
-            WHERE r_c.circstatus_id = 2;
+            WHERE r_c.circstatus_id = 2 AND c.cart_returned = FALSE;
         """
         values = []
         cols = ['id', 'Accession #', 'Title', 'Title ID', 'Library ID', 'Library', 'user_id', 'lname', 'fname', 'mname', 'livedname', 'Borrowed on', 'Return on', 'bordate', 'retdate']
@@ -53,13 +53,12 @@ def generate_loans(pathname):
         mname = ''
         user_name = []
         users = []
-        # Action buttons
-        buttons = []
         # Status badges
         statuses = []
-        badge_color = 'secondary'
-        badge_text = 'Borrowed'
         for i in df.index:
+            badge_color = 'secondary'
+            badge_text = 'Borrowed'
+            # Rewriting titles as links
             df.loc[i, 'Title'] = html.A(df['Title'][i], href = '/resource/record?id=%s' % df['Title ID'][i])
             # Combine user names into single line
             lname = df['lname'][i]
@@ -69,6 +68,7 @@ def generate_loans(pathname):
             user_name.append("%s, %s%s" % (lname, fname, mname))
             # Determine status
             remaining_time = (df['retdate'][i] - datetime.now(pytz.timezone('Asia/Manila'))).total_seconds()/(60*60)
+            #print(remaining_time)
             if remaining_time <= 1 and remaining_time >= 0:
                 badge_color = 'warning'
             elif remaining_time < 0:
@@ -77,33 +77,34 @@ def generate_loans(pathname):
             # Append user names, statuses, and buttons for returning
             users.append(html.A(["%s, %s%s" % (lname, fname, mname)], href = '/user/profile?mode=view&id=%s' %df['user_id'][i]))
             statuses.append(dbc.Badge(badge_text, color = badge_color))
-            buttons.append(
-                html.Div(
-                    dbc.Button(
-                        "Return",
-                        color = 'primary',
-                        size = 'sm',
-                        id = {'type' : 'return_btn', 'index' : str(df['id'][i]) + "&" + str(df['user_id'][i]) + "&" + str(df['Accession #'][i])},
-                        #href = '#',
-                        n_clicks = 0
-                    ),
-                    #style = {'text-align' : 'center'}
-                )
-            )
         df.insert(2, "User", users, True)
         df.insert(5, "Status", statuses, True)
-        df.insert(6, "Action", buttons, True)
-        df.insert(7, "Full name", user_name, True)
+        df.insert(6, "Full name", user_name, True)
         if df.shape[0] > 0:
             df = df.groupby('user_id')
             for name, group in df:
-                user_id = name
+                borrow_id = group['id'].drop_duplicates().iloc[0]
                 name = group['Full name'].drop_duplicates().iloc[0] #group['User'].drop_duplicates().iloc[0]
-                group = group[['Accession #', 'Title', 'Borrowed on', 'Return on', 'Status', 'Action']].sort_values(by = ['Borrowed on'])
+                group = group[['Accession #', 'Title', 'Library', 'Borrowed on', 'Return on', 'Status']].sort_values(by = ['Borrowed on'])
                 tables.append(
                     dbc.Accordion(
                         dbc.AccordionItem(
-                            dbc.Table.from_dataframe(group, hover = True, size = 'sm'),
+                            [
+                                dbc.Row(
+                                    dbc.Col(
+                                        dbc.Table.from_dataframe(group, hover = True, size = 'sm')
+                                    )
+                                ),
+                                dbc.Row(
+                                    dbc.Col(
+                                        dbc.Button(
+                                            "Return resources",
+                                            id = {'type' : 'return_btn', 'index' : int(borrow_id)},
+                                            style = {'width' : '100%'}
+                                        )
+                                    )
+                                )
+                            ],
                             title = name
                         ), className = 'mb-3'
                     )
@@ -125,7 +126,6 @@ def generate_loans(pathname):
     [
         Output('confirmreturn_modal', 'is_open'),
         Output('confirmreturn_content', 'children'),
-        Output('return_id', 'data'),
         Output('returner_id', 'data'),
         Output('borrow_id', 'data'),
         Output('retcon_alert', 'children'),
@@ -147,7 +147,7 @@ def generate_loans(pathname):
 def confirm_return(pathname, btn):
     if pathname == '/circulation/loans':
         ctx = dash.callback_context
-        if ctx.triggered[-1]['value'] == 0: raise PreventUpdate
+        if ctx.triggered[-1]['value'] == None: raise PreventUpdate
         else:
             eventid = ctx.triggered[0]['prop_id'].split('.')[0].split(',')[1].split(':')[1][1:-2]
             if eventid == 'return_btn' and btn:
@@ -156,12 +156,12 @@ def confirm_return(pathname, btn):
                 is_penalty = False
                 penalty_peso = 0
                 penalty_mins = 0
-                borrow_id = ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split(':')[1].split("&")[0][1:]
-                user_id = ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split(':')[1].split("&")[1][:-1]
-                accession_num = ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split(':')[1].split("&")[2][:-1]
+                borrow_id = int(ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split(':')[1])
+                #user_id = ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split(':')[1].split("&")[1][:-1]
+                #accession_num = ctx.triggered[-1]['prop_id'].split('.')[0].split(',')[0].split(':')[1].split("&")[2][:-1]
                 confirmreturn_text = ["Please enter your password to confirm the return of this resource."]
 
-                sql = """SELECT c.accession_num AS accession_num, u.user_lname AS lname, u.user_fname AS fname, u.user_mname AS mname, u.user_livedname AS livedname, u.borrowstatus_id AS status,
+                sql = """SELECT c.accession_num AS accession_num, c.user_id AS user_id, u.user_lname AS lname, u.user_fname AS fname, u.user_mname AS mname, u.user_livedname AS livedname, u.borrowstatus_id AS status,
                     TO_CHAR(c.borrow_date, 'Month dd, yyyy • HH:MI:SS AM') AS bordate,
                     TO_CHAR(c.return_date, 'Month dd, yyyy • HH:MI:SS AM') AS retdate,
                     c.borrow_date AS raw_bordate, c.return_date AS raw_retdate,
@@ -178,15 +178,16 @@ def confirm_return(pathname, btn):
                     LEFT JOIN resourceblock.collections AS r_col ON r.collection_id = r_col.collection_id
                     LEFT JOIN utilities.libraries AS l ON r_c.library_id = l.library_id
                     LEFT JOIN userblock.registereduser AS u ON c.user_id = u.user_id
-                    WHERE c.borrow_id = %s AND c.accession_num = %s;"""
-                values = [borrow_id, accession_num]
+                    WHERE c.borrow_id = %s;"""
+                values = [borrow_id]
                 cols = [
-                    'Accession #', 'lname', 'fname', 'mname', 'livedname', 'status', 'bordate', 'retdate', 'raw_bordate', 'raw_retdate',
+                    'Accession #', 'user_id', 'lname', 'fname', 'mname', 'livedname', 'status', 'bordate', 'retdate', 'raw_bordate', 'raw_retdate',
                     'Title', 'Title ID', 'Type', 'Call #', 'Language', 'Publisher', 'Copyright date', 'Edition',
                     'Collection', 'Library'
                 ]
                 df = db.querydatafromdatabase(sql, values, cols)
                 title_id = df['Title ID'][0]
+                user_id = df['user_id'][0]
 
                 lname = ''
                 fname = ''
@@ -202,50 +203,20 @@ def confirm_return(pathname, btn):
                             "Confirm the return of the following resource by ",
                             html.A(html.B(name), href = '/user/profile?mode=view&id=%s' % user_id),
                             " (ID number %s):" % user_id
-                        ]
+                        ], className = 'mb-0'
                     )
                 )
-                
-                authors = ["by "]
-                sql = """SELECT a.author_lname AS lname, a.author_fname AS fname, a.author_mname AS mname, a.author_id AS id
-                    FROM resourceblock.resourceauthors AS r
-                    LEFT JOIN resourceblock.authors AS a ON r.author_id = a.author_id
-                    WHERE r.title_id = %s;"""
-                values = [title_id]
-                cols =['lname', 'fname', 'mname', 'id']
-                df_authors = db.querydatafromdatabase(sql, values, cols)
 
-                lname = ''
-                fname = ''
-                mname = ''
-                for i in df_authors.index:
-                    lname = df_authors['lname'][i]
-                    if df_authors['fname'][i]: fname = df_authors['fname'][i]
-                    if df_authors['mname'][i]: mname = " " + df_authors['mname'][i][0] + "."
-                    authors.append(
-                        html.A(
-                            ["%s, %s%s" % (lname, fname, mname)],
-                            href = '/search?author_id=%s' % df_authors['id'][i]
-                        )
-                    )
-                    if i < df_authors.shape[0] - 2: authors.append(", ")
-                    elif i == df_authors.shape[0] - 2: authors.append(", & ")
-
-                card_content = [
-                    dbc.Badge(df['Type'][0], color = 'success', className = 'mb-1'),
-                    html.H4(df['Title'][0], className = 'mb-0'),
-                    html.Span(authors)
-                ]
-
-                table = df[['Call #', 'Language', 'Publisher', 'Copyright date', 'Edition', 'Collection', 'Library']].transpose()
-                table.insert(0, "Information", [html.B('Call number'), html.B('Language'), html.B('Publisher'), html.B('Copyright date'), html.B('Edition'), html.B('Collection'), html.B('Library')], True)
-                table = table.rename(columns={'Information' : '', 0 : ''})
+                card_content = []
+                table = df[['Accession #', 'Call #', 'Library', 'Title', 'Type', 'Publisher', 'Copyright date', 'Edition']]
+                #table.insert(0, "Information", [html.B('Call number'), html.B('Language'), html.B('Publisher'), html.B('Copyright date'), html.B('Edition'), html.B('Collection'), html.B('Library')], True)
+                #table = table.rename(columns={'Information' : '', 0 : ''})
                 card_content += [
                     dbc.Table.from_dataframe(
                         table, hover = True, size = 'sm'#, className = 'mb-3'
                     ),
                 ]
-                content.append(dbc.Card(dbc.CardBody(card_content), className = 'p-3 mb-3'))
+                content.append(dbc.Card(dbc.CardBody(card_content), className = 'my-3 p-3'))
 
                 # Penalty determination
                 sql = """SELECT penalty_value AS penalty, penalty_type AS type
@@ -255,35 +226,29 @@ def confirm_return(pathname, btn):
                 cols = ['penalty', 'type']
                 df_penalty = db.querydatafromdatabase(sql, values, cols)
 
-                eligiblity = df['status'][0]
+                eligiblity = True
 
-                retcon_text = "This resource will be returned on time."
+                retcon_text = ["These resource are being returned ", html.B("on time"), "."]
                 retcon_color = 'success'
                 remaining_time = (df['raw_retdate'][0] - datetime.now(pytz.timezone('Asia/Manila'))).total_seconds()/(60*60)
                 penalty_style = {'display' : 'none'}
                 if remaining_time < 0:
                     penalty = math.ceil(abs(remaining_time/24))
                     is_penalty = True
-                    penalty_peso = df_penalty['penalty'][0]*penalty
-                    penalty_mins = df_penalty['penalty'][1]*penalty
+                    penalty_peso = df_penalty['penalty'][0]*penalty*df.shape[0]
+                    penalty_mins = df_penalty['penalty'][1]*penalty*df.shape[0]
                     retcon_text = [
-                        "This resource is already ", html.B("OVERDUE"), ".",
+                        "These resources were due for return on %s and are already " % df['retdate'][0], html.B("OVERDUE"), ".",
                         " A payment of ", html.B("₱%s OR %s minutes of community service" % (penalty_peso, penalty_mins)),
                         " is required to clear this penalty."
                     ]
                     retcon_color = 'danger'
-                    if eligiblity != 2:
-                        sql = """UPDATE userblock.registereduser
-                            SET borrowstatus_id = 2, borrowstatus_date = %s
-                            WHERE user_id = %s;
-                        """
-                        values = [datetime.now(pytz.timezone('Asia/Manila')), user_id]
-                        db.modifydatabase(sql, values)
+                    eligiblity = False
                     confirmreturn_text += [
                             " ", html.B("Make sure that any penalties incurred have already been paid/rendered beforehand.")
                     ]
                     penalty_style = {'display' : 'block'}
-                return [is_open, content, accession_num, user_id, borrow_id, retcon_text, retcon_color, confirmreturn_text, is_penalty, penalty_peso, penalty_mins, penalty_style, eligiblity]
+                return [is_open, content, user_id, borrow_id, retcon_text, retcon_color, confirmreturn_text, is_penalty, penalty_peso, penalty_mins, penalty_style, eligiblity]
             else: raise PreventUpdate
     else: raise PreventUpdate
 
@@ -300,7 +265,6 @@ def confirm_return(pathname, btn):
     [
         State('return_password', 'value'),
         State('returner_id', 'data'),
-        State('return_id', 'data'),
         State('borrow_id', 'data'),
         State('is_penalty', 'data'),
         State('penalty_peso', 'data'),
@@ -310,7 +274,7 @@ def confirm_return(pathname, btn):
     ]
 )
 
-def authorize_returns(btn, password, user_id, accession_num, borrow_id,
+def authorize_returns(btn, password, user_id, borrow_id,
                       is_penalty, penalty_peso, penalty_mins, penalty_option,
                       eligiblity):
     ctx = dash.callback_context
@@ -336,32 +300,34 @@ def authorize_returns(btn, password, user_id, accession_num, borrow_id,
                     text = "Incorrect password"
                     is_open = True
                 else:
-                    if eligiblity == 2 and penalty_option == None:
+                    if not eligiblity and penalty_option == None:
                         color = 'warning'
                         text = 'Please select a method to clear the penalty.'
                     else:
+                        sql = """SELECT accession_num FROM cartblock.borrowcart WHERE borrow_id = %s;"""
+                        values = [borrow_id]
+                        cols = ['accession_num']
+                        accession_nums = tuple(db.querydatafromdatabase(sql, values, cols)['accession_num'].values.tolist())
                         penalty_p = 0
                         penalty_m = 0
                         sql = """UPDATE resourceblock.resourcecopy
                             SET circstatus_id = 1
-                            WHERE accession_num = %s;
+                            WHERE accession_num IN %s;
                             
                             UPDATE cartblock.borrowcart
-                            SET return_date = %s, overdue_fine = %s, overdue_mins = %s"""
-                        values = [accession_num, datetime.now(pytz.timezone('Asia/Manila'))]
+                            SET return_date = %s, cart_returned = %s, overdue_fine = %s, overdue_mins = %s"""
+                        values = [accession_nums, datetime.now(pytz.timezone('Asia/Manila')), True]
                         if is_penalty:
                             if penalty_option == 0:
-                                penalty_p = penalty_peso
+                                penalty_p = penalty_peso/len(accession_nums)
                             elif penalty_option == 1:
-                                penalty_m = penalty_mins
+                                penalty_m = penalty_mins/len(accession_nums)
                         values += [penalty_p, penalty_m]
-                        sql += """ WHERE borrow_id = %s;"""
-                        values += [borrow_id]
-                        if eligiblity == 2:
-                            sql += """UPDATE userblock.registereduser
-                                SET borrowstatus_id = 1
-                                WHERE user_id = %s;"""
-                            values += [user_id]
+                        sql += """ WHERE borrow_id = %s;
+                            UPDATE userblock.registereduser
+                            SET borrowstatus_id = 1
+                            WHERE user_id = %s;"""
+                        values += [borrow_id, user_id]
                         db.modifydatabase(sql, values)
             return [color, text, is_open]
         else: raise PreventUpdate
@@ -416,33 +382,44 @@ layout = html.Div(
                                     id = 'retcon_alert',
                                     dismissable = False,
                                     is_open = True
-                                )
-                            )
+                                ), #lg = 6
+                            ), justify = 'center'
                         ),
-                        dbc.Row(
-                            dbc.Col(
-                                [
-                                    dbc.Label("Select the penalty to clear:"),
-                                    dbc.RadioItems(
-                                        options = [
-                                            {'label' : 'Fine (Peso/₱)', 'value' : 0},
-                                            {'label' : 'Community service (minutes)', 'value' : 1}
-                                        ],
-                                        id = 'penalty_options',
-                                        inline = True
-                                    )
-                                ]
-                            ),
+                        html.Div(
+                            [
+                                dbc.Row(
+                                    dbc.Col(
+                                        dbc.Label("Select the penalty to clear:"),
+                                        width = 'auto'
+                                    ), justify = 'center'
+                                ),
+                                dbc.Row(
+                                    dbc.Col(
+                                        [
+                                            dbc.RadioItems(
+                                                options = [
+                                                    {'label' : 'Fine (Peso/₱)', 'value' : 0},
+                                                    {'label' : 'Community service (minutes)', 'value' : 1}
+                                                ],
+                                                id = 'penalty_options',
+                                                inline = True
+                                            )
+                                        ], width = 'auto'
+                                    ),
+                                    className = 'mb-3',
+                                    justify = 'center'
+                                )
+                            ],
                             id = 'penalty_select',
-                            className = 'mb-3',
-                            style = {'display' : 'none'},
-                            justify = True
+                            style = {'display' : 'none'}
                         ),
                         dbc.Row(
                             dbc.Col(
                                 html.Span(id = 'confirmreturn_text'),
+                                lg = 8
                             ),
-                            className = 'mb-3'
+                            className = 'mb-3',
+                            justify = 'center'
                         ),
                         dbc.Row(
                             dbc.Col(
@@ -450,8 +427,8 @@ layout = html.Div(
                                     id = 'confirmreturn_alert',
                                     dismissable = True,
                                     is_open = False
-                                )
-                            )
+                                ), lg = 6
+                            ), justify = 'center'
                         ),
                         dbc.Row(
                             dbc.Col(
@@ -460,8 +437,10 @@ layout = html.Div(
                                     id = 'return_password',
                                     placeholder = 'Password'
                                 ),
+                                lg = 6,
                                 className = 'mb-3'
-                            )
+                            ),
+                            justify = 'center'
                         )
                     ]
                 ),
@@ -470,7 +449,9 @@ layout = html.Div(
                 )
             ],
             id = 'confirmreturn_modal',
-            scrollable = True
+            size = 'lg',
+            scrollable = True,
+            className = 'p-3'
         )
     ]
 )

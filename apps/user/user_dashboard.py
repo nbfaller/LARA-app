@@ -12,6 +12,47 @@ from apps import commonmodules as cm
 from app import app
 from apps import dbconnect as db
 
+# Callback for generating greeting alert content
+@app.callback(
+    [
+        Output('greeting_alert', 'children'),
+        Output('greeting_alert', 'color'),
+    ],
+    [
+        Input('url', 'pathname'),
+        Input('currentuserid', 'data')
+    ]
+)
+
+def generate_greeting(pathname, user_id):
+    if (pathname == '/user' or pathname == '/user/dashboard') and user_id != -1:
+        text = None
+        color = None
+        time = datetime.now(pytz.timezone('Asia/Manila')).hour
+        name = ''
+
+        sql = """SELECT user_livedname AS livedname, user_fname AS fname FROM userblock.registereduser WHERE user_id = %s;"""
+        values = [user_id]
+        cols = ['livedname', 'fname']
+        df = db.querydatafromdatabase(sql, values, cols)
+        if df['livedname'][0]: name = df['livedname'][0]
+        else: name = df['fname'][0]
+
+        if time >= 0 and time < 12:
+            text = "🌅 Maupay nga aga, %s!" % name
+            color = 'cyan'
+        elif time >= 12 and time < 13:
+            text = "☀️ Maupay nga udto, %s!" % name
+            color = 'yellow'
+        elif time >= 13 and time < 18:
+            text = "🌇 Maupay nga kulop, %s!" % name
+            color = 'orange'
+        else:
+            text = "🌙 Maupay nga gabi, %s!" % name
+            color = 'dark'
+        return [text, color]
+    else: raise PreventUpdate
+
 # Callback for generating borrowing history table
 @app.callback(
     [
@@ -108,6 +149,11 @@ layout = html.Div(
                     [
                         html.H1(['Dashboard']),
                         html.Hr(),
+                        dbc.Row(
+                            dbc.Col(
+                                dbc.Alert(id = 'greeting_alert', color = 'dark')
+                            )
+                        ),
                         dbc.Row(
                             dbc.Col(
                                 html.Div(

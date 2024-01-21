@@ -2,7 +2,7 @@ from dash import dcc, html
 import dash_bootstrap_components as dbc
 from dash import dash_table
 import dash
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output, State, ALL
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import os
@@ -57,7 +57,9 @@ def populate_usertypedropdown (pathname):
 @app.callback(
     [
         Output('search_results', 'children'),
-        Output('usearch_pagination', 'max_value')
+        Output('usearch_pagination', 'max_value'),
+        Output('recdeactivate_btn', 'color'),
+        Output('recdeactivate_btn', 'children')
     ],
     [
         Input('url', 'pathname'),
@@ -66,14 +68,15 @@ def populate_usertypedropdown (pathname):
         Input('userstatus_checklist', 'value'),
         Input('borrowstatus_checklist', 'value'),
         Input('accesstype_checklist', 'value'),
-        Input('usearch_pagination', 'active_page')
+        Input('usearch_pagination', 'active_page'),
+        Input('recdeactivate_btn', 'n_clicks')
     ]
 )
 
-def generate_results (pathname, input, usertype_filter, userstatus_filter, borrowstatus_filter, accesstype_filter, page):
+def generate_results (pathname, input, usertype_filter, userstatus_filter, borrowstatus_filter, accesstype_filter, page, btn):
     if pathname == '/user/search':
         sql = """SELECT u.user_id as id, u.user_username as username, u.user_lname as lname, u.user_fname as fname, u.user_mname as mname, u.user_livedname as livedname, u.user_pronouns as pronouns,
-        t.usertype_name as usertype, b.borrowstatus_name as borrowstatus, s.userstatus_name as userstatus, a.accesstype_name as accesstype,
+        t.usertype_name as usertype, b.borrowstatus_name as borrowstatus, s.userstatus_name as userstatus, u.userstatus_id as userstatus_id, a.accesstype_name as accesstype,
         us.degree_id as studentdegree, us.student_college_id as studentcollege, us.year_id as studentyear,
         uf.faculty_college_id as facultycollege, uf.faculty_desig as facultydesig,
         ut.office_id as staffoffice, ut.staff_desig as staffdesig
@@ -91,7 +94,7 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
         values = []
         cols = [
             'id', 'username', 'lname', 'fname', 'mname', 'livedname', 'pronouns',
-            'usertype', 'borrowstatus', 'userstatus', 'accesstype',
+            'usertype', 'borrowstatus', 'userstatus', 'userstatus_id', 'accesstype',
             'studentdegree', 'studentcollege', 'studentyear',
             'facultycollege', 'facultydesig',
             'staffoffice', 'staffdesig'
@@ -153,6 +156,25 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
         df = db.querydatafromdatabase(sql, values, cols)
         results = []
         max_value = math.ceil(len(df.index)/5)
+
+        # Check if btn was clicked
+        btn_color = 'danger'
+        btn_label = 'Recommend deactivation'
+        btns = []
+        add_btns = False
+        ctx = dash.callback_context
+        if ctx.triggered:
+            eventid = ctx.triggered[0]['prop_id'].split('.')[0]
+            if eventid == 'recdeactivate_btn' and btn:
+                if btn % 2 == 1:
+                    btn_color = 'secondary'
+                    btn_label = 'Cancel deactivation'
+                    add_btns = True
+                else:
+                    btn_color = 'danger'
+                    btn_label = 'Recommend deactivation'
+                    add_btns = False
+
         for i in df.index:
             if i >= (page-1)*5 and i < (page-1)*5+5:
                 user_info = []
@@ -217,6 +239,27 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
                 image_path = "/assets/users/default.jpg"
                 if os.path.exists("assets/users/%s-%s-%s.jpg" % (df['usertype'][i].lower(), df['id'][i], df['username'][i])):
                     image_path = "/assets/users/%s-%s-%s.jpg" % (df['usertype'][i].lower(), df['id'][i], df['username'][i])
+                
+                deactivate_button = None
+                if add_btns:
+                    disabled = False
+                    color = 'danger'
+                    outline = False
+                    if df['userstatus_id'][i] >= 3:
+                        disabled = True
+                        color = 'secondary'
+                        outline = True
+                    deactivate_button = dbc.Col(
+                        dbc.Button(
+                            'Deactivate user',
+                            id = {'type' : 'recdeac_btn', 'index' : df['id'][i]},
+                            size = 'sm',
+                            color = color,
+                            outline = outline,
+                            disabled = disabled
+                        ),
+                        #className = "col-md-1"
+                    )
 
                 results.append(
                     dbc.Card(
@@ -238,7 +281,7 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
                                         style = {
                                             'maxWidth' : '256px',
                                         },
-                                        className="col-md-4",
+                                        className = "col-md-4",
                                     ),
                                     dbc.Col(
                                         dbc.CardBody(
@@ -253,7 +296,7 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
                                                 ),
                                                 html.P(
                                                     user_info,
-                                                    className="card-text",
+                                                    className = "card-text",
                                                 ),
                                                 html.Small(
                                                     [
@@ -261,12 +304,13 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
                                                         "Borrowing status: %s" % df['borrowstatus'][i], html.Br(),
                                                         "Access type: %s" % df['accesstype'][i]
                                                     ],
-                                                    className="card-text text-muted",
+                                                    className = "card-text text-muted",
                                                 ),
                                             ]
                                         ),
-                                        className="col-md-8",
-                                    )
+                                        className="col-md-7",
+                                    ),
+                                    deactivate_button
                                 ],
                                 className="g-0 d-flex align-items-center",
                             )
@@ -278,9 +322,95 @@ def generate_results (pathname, input, usertype_filter, userstatus_filter, borro
                         }
                     )
                 )
-        return [results, max_value]
+        return [results, max_value, btn_color, btn_label]
     else:
         raise PreventUpdate
+
+# Callback for recommending user deactivation
+@app.callback(
+    [
+        Output('confirmrecdeac_modal', 'is_open'),
+        Output('recdeac_content', 'children'),
+        Output('recdeac_id', 'data')
+    ],
+    [
+        Input('url', 'pathname'),
+        Input({'type' : 'recdeac_btn', 'index' : ALL}, 'n_clicks'),
+    ],
+    prevent_initial_call = True
+)
+
+def confirm_recdeac(pathname, btn):
+    if pathname == '/user/search':
+        ctx = dash.callback_context
+        modal_isopen = False
+        modal_content = []
+        recdeac_id = None
+        if ctx.triggered[-1]['value'] == None: raise PreventUpdate
+        else:
+            eventid = ctx.triggered[0]['prop_id'].split('.')[0].split(',')[1].split(':')[1][1:-2]
+            if eventid == 'recdeac_btn' and btn:
+                modal_isopen = True
+                recdeac_id = ctx.triggered[0]['prop_id'].split('.')[0].split(',')[0].split(':')[1][1:-1]
+                sql = """SELECT u.user_id AS id, u.user_lname AS lname, u.user_fname AS fname, u.user_mname AS mname,
+                    u.user_livedname AS livedname, u.user_pronouns AS pronouns, u.user_username AS username, u.user_birthdate AS bdate,
+                    u_t.usertype_name AS type, u_s.userstatus_name AS userstatus, u_b.borrowstatus_name AS borrowstatus
+                    FROM userblock.registereduser AS u
+                    LEFT JOIN utilities.usertype AS u_t ON u.usertype_id = u_t.usertype_id
+                    LEFT JOIN utilities.userstatus AS u_s ON u.userstatus_id = u_s.userstatus_id
+                    LEFT JOIN utilities.borrowstatus AS u_b ON u.borrowstatus_id = u_b.borrowstatus_id
+                    WHERE u.user_id = %s;
+                """
+                values = [recdeac_id]
+                cols = ['User ID', 'lname', 'fname', 'mname', 'livedname', 'pronouns', 'Username', 'Date of birth', 'User type', 'User status', 'Borrowing status']
+                df = db.querydatafromdatabase(sql, values, cols).rename(index = {0: ""})
+
+                # Name generation
+                lname = df['lname'][0]
+                fname = df['fname'][0]
+                if df['livedname'][0]: fname = df['livedname'][0]
+                mname = ''
+                if df['mname'][0]: mname = " " + df['mname'][0][0] + "."
+                pronouns = ''
+                if df['pronouns'][0]: pronouns = " (%s)" % df['pronouns'][0]
+                name = "%s, %s%s%s" % (lname, fname, mname, pronouns)
+                df.insert(1, 'Name', name, True)
+
+                header = [
+                    dbc.Row(
+                        dbc.Col(
+                            dbc.Badge("%s • %s" % (df['User type'][0], df['Username'][0]), color = 'primary')
+                        ), className = 'mb-1'
+                    ),
+                    dbc.Row(
+                        dbc.Col(
+                            html.H4(name)
+                        ), className = 'mb-0'
+                    )
+                ]
+
+                cols = ['User ID', 'Date of birth', 'User type', 'User status', 'Borrowing status']
+                df = df[cols]
+                df = df.transpose()
+                df.insert(0, "", cols, True)
+
+                modal_content.append(
+                    dbc.Card(
+                        dbc.CardBody(
+                            [
+                                html.Div(header),
+                                dbc.Row(
+                                    dbc.Col(
+                                        dbc.Table.from_dataframe(df, hover = True, size = 'sm')
+                                    )
+                                )
+                            ]
+                        ), className = 'p-3 mb-3'
+                    )
+                )
+                return [modal_isopen, modal_content, recdeac_id]
+            else: raise PreventUpdate
+    else: raise PreventUpdate
 
 @app.callback(
     [
@@ -393,6 +523,7 @@ def clear_filters(btn):
 
 layout = html.Div(
     [
+        dcc.Store(id = 'recdeac_id', storage_type = 'memory'),
         dbc.Row(
             [
                 cm.sidebar,
@@ -416,102 +547,108 @@ layout = html.Div(
                                 dbc.Row(
                                     [
                                         dbc.Col(
-                                            "Filter by:",
-                                            style = {
-                                                'margin-top' : 'auto',
-                                                'margin-bottom' : 'auto',
-                                            },
-                                            width = 'auto'
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.DropdownMenu(
-                                                    dbc.Checklist(
-                                                        id = 'usertype_checklist',
+                                            dbc.Row(
+                                                [
+                                                    dbc.Col(
+                                                        "Filter by:",
                                                         style = {
-                                                            'margin-left' : '1em',
-                                                            'margin-right' : '1em'
-                                                        }
+                                                            'margin-top' : 'auto',
+                                                            'margin-bottom' : 'auto',
+                                                        },
+                                                        width = 'auto'
                                                     ),
-                                                    id = 'usertype_dropdown',
-                                                    color = 'white',
-                                                    label = 'User type',
-                                                    size = 'sm'
-                                                )
-                                            ],
-                                            width = 'auto'
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.DropdownMenu(
-                                                    dbc.Checklist(
-                                                        id = 'userstatus_checklist',
-                                                        style = {
-                                                            'margin-left' : '1em',
-                                                            'margin-right' : '1em'
-                                                        }
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.DropdownMenu(
+                                                                dbc.Checklist(
+                                                                    id = 'usertype_checklist',
+                                                                    style = {
+                                                                        'margin-left' : '1em',
+                                                                        'margin-right' : '1em'
+                                                                    }
+                                                                ),
+                                                                id = 'usertype_dropdown',
+                                                                color = 'white',
+                                                                label = 'User type',
+                                                                size = 'sm'
+                                                            )
+                                                        ],
+                                                        width = 'auto'
                                                     ),
-                                                    id = 'userstatus_dropdown',
-                                                    color = 'white',
-                                                    label = 'User status',
-                                                    size = 'sm'
-                                                )
-                                            ],
-                                            width = 'auto'
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.DropdownMenu(
-                                                    dbc.Checklist(
-                                                        id = 'borrowstatus_checklist',
-                                                        style = {
-                                                            'margin-left' : '1em',
-                                                            'margin-right' : '1em'
-                                                        }
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.DropdownMenu(
+                                                                dbc.Checklist(
+                                                                    id = 'userstatus_checklist',
+                                                                    style = {
+                                                                        'margin-left' : '1em',
+                                                                        'margin-right' : '1em'
+                                                                    }
+                                                                ),
+                                                                id = 'userstatus_dropdown',
+                                                                color = 'white',
+                                                                label = 'User status',
+                                                                size = 'sm'
+                                                            )
+                                                        ],
+                                                        width = 'auto'
                                                     ),
-                                                    id = 'borrowstatus_dropdown',
-                                                    color = 'white',
-                                                    label = 'Borrowing status',
-                                                    size = 'sm'
-                                                )
-                                            ],
-                                            width = 'auto'
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.DropdownMenu(
-                                                    dbc.Checklist(
-                                                        id = 'accesstype_checklist',
-                                                        style = {
-                                                            'margin-left' : '1em',
-                                                            'margin-right' : '1em'
-                                                        }
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.DropdownMenu(
+                                                                dbc.Checklist(
+                                                                    id = 'borrowstatus_checklist',
+                                                                    style = {
+                                                                        'margin-left' : '1em',
+                                                                        'margin-right' : '1em'
+                                                                    }
+                                                                ),
+                                                                id = 'borrowstatus_dropdown',
+                                                                color = 'white',
+                                                                label = 'Borrowing status',
+                                                                size = 'sm'
+                                                            )
+                                                        ],
+                                                        width = 'auto'
                                                     ),
-                                                    id = 'accesstype_dropdown',
-                                                    color = 'white',
-                                                    label = 'Access type',
-                                                    size = 'sm'
-                                                )
-                                            ],
-                                            width = 'auto'
-                                        ),
-                                        dbc.Col(
-                                            [
-                                                dbc.Button(
-                                                    '🆇 Clear filters',
-                                                    id = 'clearfilters_btn',
-                                                    color = 'white',
-                                                    size = 'sm'
-                                                )
-                                            ],
-                                            width = 'auto'
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.DropdownMenu(
+                                                                dbc.Checklist(
+                                                                    id = 'accesstype_checklist',
+                                                                    style = {
+                                                                        'margin-left' : '1em',
+                                                                        'margin-right' : '1em'
+                                                                    }
+                                                                ),
+                                                                id = 'accesstype_dropdown',
+                                                                color = 'white',
+                                                                label = 'Access type',
+                                                                size = 'sm'
+                                                            )
+                                                        ],
+                                                        width = 'auto'
+                                                    ),
+                                                    dbc.Col(
+                                                        [
+                                                            dbc.Button(
+                                                                '🆇 Clear filters',
+                                                                id = 'clearfilters_btn',
+                                                                color = 'white',
+                                                                size = 'sm'
+                                                            )
+                                                        ],
+                                                        width = 'auto'
+                                                    )
+                                                ]
+                                            )
                                         ),
                                         dbc.Col(
                                             [
                                                 dbc.Button(
                                                     'Recommend deactivation',
                                                     color = 'danger',
-                                                    id = 'deactivate_btn',
+                                                    id = 'recdeactivate_btn',
                                                     style = {
                                                         'margin-left' : 'auto',
                                                         'margin-right' : '0'
@@ -522,6 +659,7 @@ layout = html.Div(
                                             width = 'auto'
                                         )
                                     ],
+                                    justify = 'between',
                                     className = 'mb-3'
                                 ),
                             ]
@@ -545,6 +683,62 @@ layout = html.Div(
                     ]
                 )
             ]
+        ),
+        dbc.Modal(
+            [
+                dbc.ModalHeader(dbc.ModalTitle("Recommend user deactivation")),
+                dbc.ModalBody(
+                    [
+                        dbc.Row(
+                            dbc.Col(
+                                "You have recommended the deactivation of the following user:"
+                            ),
+                            className = 'mb-3'
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                id = 'recdeac_content'
+                            ),
+                            #className = 'mb-3'
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                "Please enter your password to confirm so:",
+                            ),
+                            className = 'mb-3',
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                dbc.Alert(
+                                    id = 'recdeac_alert',
+                                    dismissable = True,
+                                    is_open = False
+                                ),
+                            ),
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                dbc.Input(
+                                    type = 'password',
+                                    id = 'recdeac_password',
+                                    placeholder = 'Password'
+                                )
+                            ),
+                            className = 'mb-3',
+                            justify = 'center'
+                        )
+                    ]
+                ),
+                dbc.ModalFooter(
+                    dbc.Button("Confirm", id = 'confirmrecdeac_btn')
+                )
+            ],
+            id = 'confirmrecdeac_modal',
+            is_open = False,
+            centered = True,
+            scrollable = True,
+            backdrop = 'static',
+            className = 'p-3'
         )
     ]
 )
